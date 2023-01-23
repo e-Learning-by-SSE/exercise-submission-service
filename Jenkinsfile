@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label 'maven && jenkins && jdk17'
+        label 'maven && docker && jdk17'
     }
     
     stages {
