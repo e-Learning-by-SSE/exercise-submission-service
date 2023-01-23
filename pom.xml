@@ -46,7 +46,7 @@
 					<docker>
 						<publishRegistry>
 							<username>${docker.user}</username>
-							<password>${docker.secret}</password>
+							<password>${docker.password}</password>
 							<url>https://${docker.registry}</url>
 						</publishRegistry>
 					</docker>
