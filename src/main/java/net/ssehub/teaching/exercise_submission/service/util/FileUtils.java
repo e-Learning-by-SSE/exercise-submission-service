@@ -7,6 +7,11 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
+/**
+ * Static utility methods for files and directories.
+ * 
+ * @author Adam
+ */
 public class FileUtils {
     
     private static boolean fileOperationsShouldFail;
