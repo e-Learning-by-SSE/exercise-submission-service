@@ -9,6 +9,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
 import net.ssehub.teaching.exercise_submission.service.storage.ISubmissionStorage;
 import net.ssehub.teaching.exercise_submission.service.storage.NoSuchTargetException;
 import net.ssehub.teaching.exercise_submission.service.storage.StorageException;
@@ -23,6 +26,7 @@ import net.ssehub.teaching.exercise_submission.service.submission.Version;
  *  
  * @author Adam
  */
+@Component
 public class FilesystemStorage implements ISubmissionStorage {
     
     private Path baseDirectory;
@@ -35,7 +39,7 @@ public class FilesystemStorage implements ISubmissionStorage {
      * 
      * @throws IOException If the given base directory is not a directory.
      */
-    public FilesystemStorage(Path baseDirectory) throws IOException {
+    public FilesystemStorage(@Value("${storage.location}") Path baseDirectory) throws IOException {
         if (!Files.isDirectory(baseDirectory)) {
             throw new IOException(baseDirectory +  " is not a directory");
         }
