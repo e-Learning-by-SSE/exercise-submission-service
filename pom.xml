@@ -46,7 +46,6 @@
 				<configuration>
 					<image>
 						<name>${docker.baseTag}:${project.version}</name>
-						<publish>false</publish>
 					</image>
 					<docker>
 						<publishRegistry>
