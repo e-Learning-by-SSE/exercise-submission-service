@@ -102,7 +102,7 @@
 		<repository>
 			<id>e-learning-by-sse-github</id>
 			<name>GitHub e-learning-by-SSE Apache Maven Packages</name>
-			<url>https://maven.pkg.github.com/e-learning-by-sse/infrastructure-maven-packages</url>
+			<url>https://maven.pkg.github.com/e-learning-by-sse/maven-packages</url>
 		</repository>
 	</distributionManagement>
 </project>
