@@ -1,9 +1,11 @@
 package net.ssehub.teaching.exercise_submission.service.submission;
 
-import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.springframework.stereotype.Component;
 
+import net.ssehub.teaching.exercise_submission.service.dto.CheckMessageDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 import net.ssehub.teaching.exercise_submission.service.storage.ISubmissionStorage;
 import net.ssehub.teaching.exercise_submission.service.storage.NoSuchTargetException;
@@ -20,6 +22,8 @@ public class SubmissionManager {
 
     private ISubmissionStorage storage;
     
+    private List<Check> checks;
+    
     /**
      * Creates a new {@link SubmissionManager}.
      * 
@@ -27,6 +31,17 @@ public class SubmissionManager {
      */
     public SubmissionManager(ISubmissionStorage storage) {
         this.storage = storage;
+        this.checks = new LinkedList<>();
+    }
+    
+    /**
+     * Adds a check that is run for each submission. TODO: this should be gotten from the assignment configuration in
+     * the student management system.
+     * 
+     * @param check The check to run.
+     */
+    public void addCheck(Check check) {
+        this.checks.add(check);
     }
     
     /**
@@ -44,10 +59,31 @@ public class SubmissionManager {
      */
     public SubmissionResultDto submit(SubmissionTarget target, Submission submission)
             throws NoSuchTargetException, StorageException {
-        storage.submitNewVersion(target, submission);
+        
+        List<CheckMessageDto> messages = new LinkedList<>();
+        
+        boolean allPassed = true;
+        for (Check check : this.checks) {
+            
+            boolean passed = check.run(null);
+            check.getResultMessages().stream()
+                .map(m -> new CheckMessageDto(m))
+                .forEach(messages::add);
+            
+            if (!passed) {
+                allPassed = false;
+                break;
+            }
+        }
+        
+        if (allPassed) {
+            storage.submitNewVersion(target, submission);
+        }
+        
         SubmissionResultDto result = new SubmissionResultDto();
-        result.setAccepted(true);
-        result.setMessages(Collections.emptyList());
+        result.setAccepted(allPassed);
+        result.setMessages(messages);
+        
         return result;
     }
     
