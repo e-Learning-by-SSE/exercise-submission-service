@@ -36,6 +36,10 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<configuration>
+					<image>
+						<name>ghcr.io/e-learning-by-sse/${project.artifactId}:${project.version}</name>
+						<publish>false</publish>
+					</image>
 					<docker>
 						<publishRegistry>
 							<username>${docker.user}</username>
