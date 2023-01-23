@@ -15,9 +15,14 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<docker.baseTag>ghcr.io/e-learning-by-sse/${project.artifactId}</docker.baseTag>
+		
+		<!-- default values for docker image publishing -->
 		<docker.user>undefined</docker.user>
 		<docker.password>undefined</docker.password>
+		<docker.registry>ghcr.io</docker.registry>
+		<docker.group>e-learning-by-sse</docker.group>
+		
+		<docker.baseTag>${docker.registry}/${docker.group}/${project.artifactId}</docker.baseTag>
 	</properties>
 
 	<dependencies>
