@@ -7,7 +7,7 @@ pipeline {
         stage ('Maven') {
             steps {
                 withMaven(mavenSettingsConfig: 'mvn-elearn-repo-settings') {
-                    sh 'mvn clean deploy'
+                    sh 'mvn clean deploy spring-boot:build-image -Dspring-boot.build-image.publish=true'
                 }
                 archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
             }
