@@ -3,8 +3,11 @@ package net.ssehub.teaching.exercise_submission.service.submission;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -15,9 +18,44 @@ import java.util.Set;
  */
 public class Submission {
 
+    /**
+     * Wrapper around file content bytes to provide an {@link #equals(Object)} method.
+     */
+    private static class FileContent {
+        private byte[] bytes;
+
+        /**
+         * Creates this wrapper around the given array.
+         * 
+         * @param bytes The array to wrap.
+         */
+        public FileContent(byte[] bytes) {
+            this.bytes = bytes;
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(bytes);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof FileContent)) {
+                return false;
+            }
+            FileContent other = (FileContent) obj;
+            return Arrays.equals(bytes, other.bytes);
+        }
+        
+        
+    }
+    
     private String author;
     
-    private Map<Path, byte[]> files;
+    private Map<Path, FileContent> files;
     
     /**
      * Creates a submission. Called by {@link SubmissionBuilder}.
@@ -27,7 +65,10 @@ public class Submission {
      */
     Submission(String author, Map<Path, byte[]> files) {
         this.author = author;
-        this.files = files;
+        this.files = new HashMap<>(files.size());
+        for (Map.Entry<Path, byte[]> entry : files.entrySet()) {
+            this.files.put(entry.getKey(), new FileContent(entry.getValue()));
+        }
     }
     
     /**
@@ -83,7 +124,7 @@ public class Submission {
         if (!containsFile(filepath)) {
             throw new NoSuchElementException("File " + filepath + " does not exist in this submission");
         }
-        return files.get(filepath);
+        return files.get(filepath).bytes;
     }
     
     /**
@@ -100,8 +141,8 @@ public class Submission {
             throw new IOException(directory + " is not a directory");
         }
         
-        for (Map.Entry<Path, byte[]> file : this.files.entrySet()) {
-            writeFile(file.getKey(), file.getValue(), directory);
+        for (Map.Entry<Path, FileContent> file : this.files.entrySet()) {
+            writeFile(file.getKey(), file.getValue().bytes, directory);
         }
     }
     
@@ -118,6 +159,23 @@ public class Submission {
         Path absoluteDestination = directory.resolve(filepath);
         Files.createDirectories(absoluteDestination.getParent());
         Files.write(absoluteDestination, content);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(author, files);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof Submission)) {
+            return false;
+        }
+        Submission other = (Submission) obj;
+        return Objects.equals(author, other.author) && Objects.equals(files, other.files);
     }
     
 }

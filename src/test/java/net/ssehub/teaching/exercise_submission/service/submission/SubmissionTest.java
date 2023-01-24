@@ -211,4 +211,32 @@ public class SubmissionTest {
         );
     }
     
+    @Test
+    public void towSubmissionEqual() {
+        Map<Path, byte[]> files = new HashMap<>();
+        files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission1 = new Submission("author", files);
+        
+        // same file content, but different array
+        files = new HashMap<>();
+        files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission2 = new Submission("author", files);
+        
+        assertEquals(submission1, submission2);
+    }
+    
+    @Test
+    public void towSubmissionEqualHash() {
+        Map<Path, byte[]> files = new HashMap<>();
+        files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission1 = new Submission("author", files);
+        
+        // same file content, but different array
+        files = new HashMap<>();
+        files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission2 = new Submission("author", files);
+        
+        assertEquals(submission1.hashCode(), submission2.hashCode());
+    }
+    
 }
