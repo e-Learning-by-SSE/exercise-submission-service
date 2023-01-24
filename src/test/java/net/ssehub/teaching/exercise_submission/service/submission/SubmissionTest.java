@@ -19,13 +19,12 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import net.ssehub.teaching.exercise_submission.service.util.FileUtils;
+import org.junit.jupiter.api.io.TempDir;
 
 public class SubmissionTest {
 
+    @TempDir
     private Path temporaryDirectory;
     
     @Test
@@ -102,8 +101,6 @@ public class SubmissionTest {
     public void writeEmptySubmission() throws IOException {
         Submission submission = new Submission("author", Collections.emptyMap());
         
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeEmptySubmission");
-        
         submission.writeToDirectory(temporaryDirectory);
         
         assertEquals(0, Files.list(temporaryDirectory).count());
@@ -114,8 +111,6 @@ public class SubmissionTest {
         Map<Path, byte[]> files = new HashMap<>();
         files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission = new Submission("author", files);
-        
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeSingleFileSubmission");
         
         submission.writeToDirectory(temporaryDirectory);
         
@@ -135,8 +130,6 @@ public class SubmissionTest {
         files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
         files.put(Path.of("other.txt"), "other content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission = new Submission("author", files);
-        
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeMultipleFileSubmission");
         
         submission.writeToDirectory(temporaryDirectory);
         
@@ -159,8 +152,6 @@ public class SubmissionTest {
         files.put(Path.of("dir1/other.txt"), "other content\n".getBytes(StandardCharsets.UTF_8));
         files.put(Path.of("dir2/subdir/other.txt"), "even different content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission = new Submission("author", files);
-        
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeMultipleFilesInDirectories");
         
         submission.writeToDirectory(temporaryDirectory);
         
@@ -188,7 +179,6 @@ public class SubmissionTest {
         files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission = new Submission("author", files);
         
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeSingleFileSubmission");
         Files.writeString(temporaryDirectory.resolve("test.txt"), "previous content\n", StandardCharsets.UTF_8);
         
         submission.writeToDirectory(temporaryDirectory);
@@ -209,8 +199,6 @@ public class SubmissionTest {
         files.put(Path.of("test.txt"), new byte[] {0x00, (byte) 0xE3, 0x45});
         Submission submission = new Submission("author", files);
         
-        temporaryDirectory = Files.createTempDirectory("SubmissionTest.writeBinaryFile");
-        
         submission.writeToDirectory(temporaryDirectory);
         
         assertAll(
@@ -221,13 +209,6 @@ public class SubmissionTest {
             () -> assertArrayEquals(new byte[] {0x00, (byte) 0xE3, 0x45},
                     Files.readAllBytes(temporaryDirectory.resolve("test.txt")))
         );
-    }
-    
-    @AfterEach
-    public void cleanTemporaryDirectory() throws IOException {
-        if (temporaryDirectory != null) {
-            FileUtils.deleteDirectory(temporaryDirectory);
-        }
     }
     
 }
