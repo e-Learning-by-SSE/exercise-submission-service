@@ -131,6 +131,20 @@ public class SubmissionControllerTest {
                     target.course(), target.assignmentName(), target.groupName(),
                     files, author1Authentication));
         }
+        
+        @Test
+        public void invalidFilepathBadRequest() {
+            SubmissionController controller = new SubmissionController(
+                    rejectingManager, mock(ISubmissionStorage.class), allAllowedAuthManager);
+            
+            List<FileDto> files = List.of(new FileDto("../test.txt", "testcontent"));
+            
+            ResponseEntity<SubmissionResultDto> result = assertDoesNotThrow(() -> controller.submit(
+                    target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
+            
+            assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        }
+        
     }
     
     @Nested

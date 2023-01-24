@@ -86,20 +86,29 @@ public class SubmissionController {
             throw new UnauthorizedException();
         }
         
-        SubmissionBuilder submissionBuilder = new SubmissionBuilder(username);
-        for (FileDto file : files) {
-            submissionBuilder.addFile(Path.of(file.getPath()), Base64.getDecoder().decode(file.getContent()));
-        }
-     
-        SubmissionResultDto resultDto = manager.submit(target, submissionBuilder.build());
-        HttpStatus status;
-        if (resultDto.getAccepted()) {
-            status = HttpStatus.CREATED;
-        } else {
-            status = HttpStatus.OK;
+        
+        ResponseEntity<SubmissionResultDto> result;
+        try {
+            SubmissionBuilder submissionBuilder = new SubmissionBuilder(username);
+            for (FileDto file : files) {
+                submissionBuilder.addFile(Path.of(file.getPath()), Base64.getDecoder().decode(file.getContent()));
+            }
+            
+            SubmissionResultDto resultDto = manager.submit(target, submissionBuilder.build());
+            HttpStatus status;
+            if (resultDto.getAccepted()) {
+                status = HttpStatus.CREATED;
+            } else {
+                status = HttpStatus.OK;
+            }
+            
+            result = new ResponseEntity<>(resultDto, status);
+            
+        } catch (IllegalArgumentException e) {
+            result = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
-        return new ResponseEntity<>(resultDto, status);
+        return result;
     }
     
     /**
