@@ -18,8 +18,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import net.ssehub.teaching.exercise_submission.service.storage.NoSuchTargetException;
 import net.ssehub.teaching.exercise_submission.service.storage.StorageException;
@@ -27,11 +27,11 @@ import net.ssehub.teaching.exercise_submission.service.submission.Submission;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionBuilder;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarget;
 import net.ssehub.teaching.exercise_submission.service.submission.Version;
-import net.ssehub.teaching.exercise_submission.service.util.FileUtils;
 
 public class FilesystemStorageTest {
 
-    private Path temporaryDirectory;
+    @TempDir
+    private Path storageDir;
     
     @Test
     public void constructorNonExistingDirectoryThrows()  {
@@ -41,53 +41,47 @@ public class FilesystemStorageTest {
     
     @Test
     public void createOrUpdateAssignmentCreatesDirectories() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.createOrUpdateAssignmentCreatesDirectory");
-        
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertDoesNotThrow(() ->
                 storage.createOrUpdateAssignment("somecourse-wise2122", "FirstAssignment", "Group01", "Group02"));
         
         assertAll(
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve(
+            () -> assertTrue(Files.isDirectory(storageDir.resolve(
                     "somecourse-wise2122"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve(
+            () -> assertTrue(Files.isDirectory(storageDir.resolve(
                     "somecourse-wise2122/FirstAssignment"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve(
+            () -> assertTrue(Files.isDirectory(storageDir.resolve(
                     "somecourse-wise2122/FirstAssignment/Group01"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve(
+            () -> assertTrue(Files.isDirectory(storageDir.resolve(
                     "somecourse-wise2122/FirstAssignment/Group02")))
         );
     }
     
     @Test
     public void createOrUpdateAssignmentExistingDirectoryAddsNewGroups() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.createOrUpdateAssignmentExistingDirectoryAddsNewGroups");
-        Files.createDirectories(temporaryDirectory.resolve("course-wise2122/Homework01/Group02"));
-        Files.createDirectories(temporaryDirectory.resolve("course-wise2122/Homework01/Group03"));
+        Files.createDirectories(storageDir.resolve("course-wise2122/Homework01/Group02"));
+        Files.createDirectories(storageDir.resolve("course-wise2122/Homework01/Group03"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertDoesNotThrow(() ->
                 storage.createOrUpdateAssignment("course-wise2122", "Homework01", "Group01", "Group02"));
         
         assertAll(
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve("course-wise2122"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve("course-wise2122/Homework01"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve("course-wise2122/Homework01/Group01"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve("course-wise2122/Homework01/Group02"))),
-            () -> assertTrue(Files.isDirectory(temporaryDirectory.resolve("course-wise2122/Homework01/Group03")))
+            () -> assertTrue(Files.isDirectory(storageDir.resolve("course-wise2122"))),
+            () -> assertTrue(Files.isDirectory(storageDir.resolve("course-wise2122/Homework01"))),
+            () -> assertTrue(Files.isDirectory(storageDir.resolve("course-wise2122/Homework01/Group01"))),
+            () -> assertTrue(Files.isDirectory(storageDir.resolve("course-wise2122/Homework01/Group02"))),
+            () -> assertTrue(Files.isDirectory(storageDir.resolve("course-wise2122/Homework01/Group03")))
         );
     }
     
     @Test
     public void getVersionsEmptyForEmptyGroup() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsEmptyForEmptyGroup");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         List<Version> versions = assertDoesNotThrow(
             () -> storage.getVersions(new SubmissionTarget("course", "Homework01", "Group01")));
@@ -97,9 +91,7 @@ public class FilesystemStorageTest {
     
     @Test
     public void getVersionsNonExistingCourseThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsNonExistingCourseThrows");
-        
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class,
                 () -> storage.getVersions(new SubmissionTarget("course", "Homework01", "Group01")));
@@ -107,10 +99,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getVersionsNonExistingAssignmentThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsNonExistingAssignmentThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course"));
+        Files.createDirectories(storageDir.resolve("course"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class,
             () -> storage.getVersions(new SubmissionTarget("course", "Homework01", "Group01")));
@@ -118,10 +109,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getVersionsNonExistingGroupThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsNonExistingGroupThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class,
             () -> storage.getVersions(new SubmissionTarget("course", "Homework01", "Group01")));
@@ -129,11 +119,10 @@ public class FilesystemStorageTest {
     
     @Test
     public void getVersionsReturnsPreExistingDirectory() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsReturnsPreExistingDirectory");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student1"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student1"));
         
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         assertEquals(Arrays.asList(new Version("student1", timestamp)),
@@ -142,11 +131,10 @@ public class FilesystemStorageTest {
     
     @Test
     public void getVersionsInvalidDirectoryNameThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getVersionsInvalidDirectoryNameThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/invalid"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/invalid"));
         
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         StorageException e = assertThrows(StorageException.class,
             () -> storage.getVersions(new SubmissionTarget("course", "Homework01", "Group01")));
@@ -155,16 +143,15 @@ public class FilesystemStorageTest {
     
     @Test
     public void getMultipleVersionsSorted() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getMultipleVersionsSorted");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student1"));
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/32400_student1"));
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738611_student1"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student1"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/32400_student1"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738611_student1"));
         
         Instant t1 = Instant.ofEpochSecond(1634738601L);
         Instant t2 = Instant.ofEpochSecond(32400L);
         Instant t3 = Instant.ofEpochSecond(1634738611L);
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertEquals(Arrays.asList(
                 new Version("student1", t3),
@@ -202,10 +189,7 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionNonExistingCourseThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.getSubmissionNonExistingCourseThrows");
-        
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         assertThrows(NoSuchTargetException.class, () -> storage.getSubmission(
@@ -214,11 +198,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionNonExistingAssignmentThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.getSubmissionNonExistingAssignmentThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course"));
+        Files.createDirectories(storageDir.resolve("course"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         assertThrows(NoSuchTargetException.class, () -> storage.getSubmission(
@@ -227,11 +209,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionNonExistingGroupThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.getSubmissionNonExistingGroupThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         assertThrows(NoSuchTargetException.class, () -> storage.getSubmission(
@@ -240,11 +220,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionNonExistingVersionThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.getSubmissionNonExistingVersionThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         assertThrows(NoSuchTargetException.class, () -> storage.getSubmission(
@@ -253,10 +231,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionEmpty() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getSubmissionEmpty");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         
@@ -271,12 +248,11 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionSingleFile() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getSubmissionSingleFile");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student"));
-        Files.writeString(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/test.txt"),
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student"));
+        Files.writeString(storageDir.resolve("course/Homework01/Group01/1634738601_student/test.txt"),
                 "some content\n", StandardCharsets.UTF_8);
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         
@@ -292,19 +268,17 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionMultipleFilesAndDirectories() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.getSubmissionMultipleFilesAndDirectories");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/dir1"));
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/dir2/subdir"));
-        Files.writeString(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/dir1/test.txt"),
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student/dir1"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student/dir2/subdir"));
+        Files.writeString(storageDir.resolve("course/Homework01/Group01/1634738601_student/dir1/test.txt"),
                 "first content\n", StandardCharsets.UTF_8);
-        Files.writeString(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/dir1/other.txt"),
+        Files.writeString(storageDir.resolve("course/Homework01/Group01/1634738601_student/dir1/other.txt"),
                 "second content\n", StandardCharsets.UTF_8);
-        Files.writeString(temporaryDirectory.resolve(
+        Files.writeString(storageDir.resolve(
                 "course/Homework01/Group01/1634738601_student/dir2/subdir/another.txt"),
                 "third cöntent\n", StandardCharsets.UTF_8);
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant timestamp = Instant.ofEpochSecond(1634738601L);
         
@@ -324,15 +298,14 @@ public class FilesystemStorageTest {
     
     @Test
     public void getSubmissionTwoVersions() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.getSubmissionTwoVersions");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student"));
-        Files.writeString(temporaryDirectory.resolve("course/Homework01/Group01/1634738601_student/test.txt"),
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634738601_student"));
+        Files.writeString(storageDir.resolve("course/Homework01/Group01/1634738601_student/test.txt"),
                 "some content\n", StandardCharsets.UTF_8);
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01/1634801393_friend"));
-        Files.writeString(temporaryDirectory.resolve("course/Homework01/Group01/1634801393_friend/other.txt"),
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01/1634801393_friend"));
+        Files.writeString(storageDir.resolve("course/Homework01/Group01/1634801393_friend/other.txt"),
                 "other content\n", StandardCharsets.UTF_8);
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         Instant t1 = Instant.ofEpochSecond(1634738601L);
         Instant t2 = Instant.ofEpochSecond(1634801393L);
@@ -355,10 +328,7 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionNonExistingCourseThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionNonExistingCourseThrows");
-        
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class, () -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("student").build()));
@@ -366,11 +336,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionNonExistingAssignmentThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionNonExistingAssignmentThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course"));
+        Files.createDirectories(storageDir.resolve("course"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class, () -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("student").build()));
@@ -378,11 +346,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionNonExistingGroupThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionNonExistingGroupThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertThrows(NoSuchTargetException.class, () -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("student").build()));
@@ -390,17 +356,15 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionVersionAlreadyExistsThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionVersionAlreadyExistsThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
         // create folders for versions covering the next 100 seconds
         long now = Instant.now().getEpochSecond();
         for (int i = 0; i < 100; i++) {
-            Files.createDirectory(temporaryDirectory.resolve("course/Homework01/Group01/" + (now + i) + "_student"));
+            Files.createDirectory(storageDir.resolve("course/Homework01/Group01/" + (now + i) + "_student"));
         }
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         StorageException e = assertThrows(StorageException.class, () -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("student").build()));
@@ -409,17 +373,15 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionVersionWithDifferentAuthorAlreadyExistsThrows() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionVersionWithDifferentAuthorAlreadyExistsThrows");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
         // create folders for versions covering the next 100 seconds
         long now = Instant.now().getEpochSecond();
         for (int i = 0; i < 100; i++) {
-            Files.createDirectory(temporaryDirectory.resolve("course/Homework01/Group01/" + (now + i) + "_author1"));
+            Files.createDirectory(storageDir.resolve("course/Homework01/Group01/" + (now + i) + "_author1"));
         }
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         StorageException e = assertThrows(StorageException.class, () -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("author2").build()));
@@ -428,16 +390,14 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionEmptySubmissionCreatesDirectory() throws IOException {
-        temporaryDirectory = Files.createTempDirectory(
-                "FilesystemStorageTest.submitNewVersionEmptySubmissionCreatesDirectory");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         assertDoesNotThrow(() -> storage.submitNewVersion(
                 new SubmissionTarget("course", "Homework01", "Group01"), new SubmissionBuilder("student").build()));
         
-        Optional<Path> versionDir = Files.list(temporaryDirectory.resolve("course/Homework01/Group01")).findFirst();
+        Optional<Path> versionDir = Files.list(storageDir.resolve("course/Homework01/Group01")).findFirst();
         
         assertAll(
             () -> assertTrue(versionDir.isPresent()),
@@ -448,10 +408,9 @@ public class FilesystemStorageTest {
     
     @Test
     public void submitNewVersionWritesContent() throws IOException {
-        temporaryDirectory = Files.createTempDirectory("FilesystemStorageTest.submitNewVersionWritesContent");
-        Files.createDirectories(temporaryDirectory.resolve("course/Homework01/Group01"));
+        Files.createDirectories(storageDir.resolve("course/Homework01/Group01"));
         
-        FilesystemStorage storage = new FilesystemStorage(temporaryDirectory);
+        FilesystemStorage storage = new FilesystemStorage(storageDir);
         
         SubmissionBuilder builder = new SubmissionBuilder("random-author");
         builder.addUtf8File(Path.of("test.txt"), "some content\n");
@@ -460,7 +419,7 @@ public class FilesystemStorageTest {
         assertDoesNotThrow(
             () -> storage.submitNewVersion(new SubmissionTarget("course", "Homework01", "Group01"), builder.build()));
         
-        Optional<Path> versionDir = Files.list(temporaryDirectory.resolve("course/Homework01/Group01")).findFirst();
+        Optional<Path> versionDir = Files.list(storageDir.resolve("course/Homework01/Group01")).findFirst();
         
         assertAll(
             () -> assertTrue(versionDir.isPresent()),
@@ -470,13 +429,6 @@ public class FilesystemStorageTest {
             () -> assertEquals("other content\n",
                     Files.readString(versionDir.get().resolve("dir/test.txt"), StandardCharsets.UTF_8))
         );
-    }
-    
-    @AfterEach
-    public void cleanTemporaryDirectory() throws IOException {
-        if (temporaryDirectory != null) {
-            FileUtils.deleteDirectory(temporaryDirectory);
-        }
     }
     
 }
