@@ -6,6 +6,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,18 +50,22 @@ public class SubmissionController {
      * @param assignment The assignment to add the submission for.
      * @param group The group to add the submission for.
      * @param files The files of the submission.
+     * @param auth The authentication.
      * 
      * @return The result of the submission.
      */
     @PostMapping("/{course}/{assignment}/{group}")
+    @PreAuthorize("permitAll()")
     public ResponseEntity<SubmissionResultDto> submit(
             @PathVariable String course,
             @PathVariable String assignment,
             @PathVariable String group,
-            @RequestBody List<FileDto> files) throws NoSuchTargetException, StorageException {
+            @RequestBody List<FileDto> files,
+            Authentication auth)
+            throws NoSuchTargetException, StorageException {
         
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
-        SubmissionBuilder submissionBuilder = new SubmissionBuilder(group); // TODO: get proper author name
+        SubmissionBuilder submissionBuilder = new SubmissionBuilder(auth.getName());
         
         for (FileDto file : files) {
             submissionBuilder.addFile(Path.of(file.getPath()), Base64.getDecoder().decode(file.getContent()));

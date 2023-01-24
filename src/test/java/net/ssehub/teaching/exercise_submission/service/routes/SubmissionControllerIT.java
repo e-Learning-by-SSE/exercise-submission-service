@@ -15,6 +15,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
@@ -27,7 +29,7 @@ import net.ssehub.teaching.exercise_submission.service.StorageInitializer;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri=none")
 @AutoConfigureMockMvc
 public class SubmissionControllerIT extends StorageInitializer {
 
@@ -38,14 +40,16 @@ public class SubmissionControllerIT extends StorageInitializer {
     private ObjectMapper json;
     
     @Test
+    @WithMockUser(username = "author1")
     public void successfulSubmission() {
         Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
         assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
         
         MvcResult result = post("/submission/{course}/{assignment}/{group}",
                 List.of(new FileDto("Main.java", "content...")),
+                "author1",
                 "java-sose23", "Homework05", "JP123");
-
+        
         SubmissionResultDto dto = parseResponse(result, SubmissionResultDto.class);
         
         assertAll(
@@ -56,19 +60,21 @@ public class SubmissionControllerIT extends StorageInitializer {
         );
     }
     
-    public MvcResult post(String urlTemplate, Object body, Object... urlVariables) {
-        return assertDoesNotThrow(() -> mvc.perform(postRequest(urlTemplate, body, urlVariables))).andReturn();
+    public MvcResult post(String urlTemplate, Object body, String username, Object... urlVariables) {
+        return assertDoesNotThrow(
+            () -> mvc.perform(postRequest(urlTemplate, body, username, urlVariables))).andReturn();
     }
     
     public <T> T parseResponse(MvcResult response, Class<T> responseType) {
         return assertDoesNotThrow(() -> json.readValue(response.getResponse().getContentAsString(), responseType));
     }
     
-    private RequestBuilder postRequest(String urlTemplate, Object body, Object... urlVariables)
+    private RequestBuilder postRequest(String urlTemplate, Object body, String username, Object... urlVariables)
             throws JsonProcessingException {
         return MockMvcRequestBuilders.post(urlTemplate, urlVariables)
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body));
+                .content(json.writeValueAsString(body))
+                .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(b -> b.subject(username)));
     }
     
 }

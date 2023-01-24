@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 
 import net.ssehub.teaching.exercise_submission.service.dto.CheckMessageDto;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
@@ -36,6 +37,8 @@ public class SubmissionControllerTest {
     private SubmissionManager rejectingManager;
     private SubmissionResultDto rejectingResult;
     
+    private Authentication author1Authentication;
+    
     @BeforeEach
     public void initSubmission() throws StorageException {
         target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
@@ -44,7 +47,7 @@ public class SubmissionControllerTest {
             new FileDto("util/Util.java", "testcontent")
         );
         
-        SubmissionBuilder submissionBuilder = new SubmissionBuilder("JP042");
+        SubmissionBuilder submissionBuilder = new SubmissionBuilder("author1");
         submissionBuilder.addUtf8File(Path.of("Main.java"), "testcontent");
         submissionBuilder.addUtf8File(Path.of("util/Util.java"), "testcontent");
         Submission submission = submissionBuilder.build();
@@ -62,6 +65,9 @@ public class SubmissionControllerTest {
         rejectingResult.setMessages(List.of(new CheckMessageDto("test", MessageType.WARNING, "mock")));
         when(rejectingManager.submit(target, submission))
                 .thenReturn(rejectingResult);
+        
+        author1Authentication = mock(Authentication.class);
+        when(author1Authentication.getName()).thenReturn("author1");
     }
     
     @Test
@@ -69,7 +75,7 @@ public class SubmissionControllerTest {
         SubmissionController controller = new SubmissionController(acceptingManager);
         
         ResponseEntity<SubmissionResultDto> result = controller.submit(
-                target.course(), target.assignmentName(), target.groupName(), files);
+                target.course(), target.assignmentName(), target.groupName(), files, author1Authentication);
         
         assertAll(
             () -> assertSame(acceptingResult, result.getBody()),
@@ -82,7 +88,7 @@ public class SubmissionControllerTest {
         SubmissionController controller = new SubmissionController(rejectingManager);
         
         ResponseEntity<SubmissionResultDto> result = controller.submit(
-                target.course(), target.assignmentName(), target.groupName(), files);
+                target.course(), target.assignmentName(), target.groupName(), files, author1Authentication);
         
         assertAll(
             () -> assertSame(rejectingResult, result.getBody()),
