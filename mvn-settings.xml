@@ -21,12 +21,6 @@
 					</snapshots>
 				</repository>
 			</repositories>
-			<properties>
-				<docker.user>${env.DOCKER_USER}</docker.user>
-				<docker.password>${env.DOCKER_PASSWORD}</docker.password>
-				<docker.registry>${env.DOCKER_REGISTRY}</docker.registry>
-				<docker.group>${env.DOCKER_GROUP}</docker.group>
-			</properties>
 		</profile>
 	</profiles>
 	<servers>
