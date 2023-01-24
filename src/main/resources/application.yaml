@@ -1,2 +1,2 @@
 storage:
-    location: "teststorage"
+    location: "/storage"
