@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -18,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
+import net.ssehub.teaching.exercise_submission.service.auth.AuthManager;
 import net.ssehub.teaching.exercise_submission.service.dto.CheckMessageDto;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
@@ -35,10 +38,16 @@ public class SubmissionControllerTest {
     
     private Authentication author1Authentication;
     
+    private AuthManager allAllowedAuthManager;
+    
     @BeforeEach
     public void setupMocks() {
         author1Authentication = mock(Authentication.class);
         when(author1Authentication.getName()).thenReturn("author1");
+        
+        allAllowedAuthManager = mock(AuthManager.class);
+        when(allAllowedAuthManager.isSubmissionAllowed(any(), any())).thenReturn(true);
+        when(allAllowedAuthManager.isReplayAllowed(any(), any())).thenReturn(true);
     }
 
     @Nested
@@ -54,9 +63,8 @@ public class SubmissionControllerTest {
         private SubmissionManager rejectingManager;
         private SubmissionResultDto rejectingResult;
         
-        
         @BeforeEach
-        public void initSubmission() throws StorageException {
+        public void setupMocks() throws StorageException {
             target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
             files = List.of(
                     new FileDto("Main.java", "testcontent"),
@@ -84,12 +92,12 @@ public class SubmissionControllerTest {
         }
         
         @Test
-        public void submissionAccepted() throws StorageException {
+        public void accepted() {
             SubmissionController controller = new SubmissionController(
-                    acceptingManager, mock(ISubmissionStorage.class));
+                    acceptingManager, mock(ISubmissionStorage.class), allAllowedAuthManager);
             
-            ResponseEntity<SubmissionResultDto> result = controller.submit(
-                    target.course(), target.assignmentName(), target.groupName(), files, author1Authentication);
+            ResponseEntity<SubmissionResultDto> result = assertDoesNotThrow(() -> controller.submit(
+                    target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
             
             assertAll(
                 () -> assertSame(acceptingResult, result.getBody()),
@@ -98,17 +106,30 @@ public class SubmissionControllerTest {
         }
         
         @Test
-        public void submissionRejected() throws StorageException {
+        public void rejected() {
             SubmissionController controller = new SubmissionController(
-                    rejectingManager, mock(ISubmissionStorage.class));
+                    rejectingManager, mock(ISubmissionStorage.class), allAllowedAuthManager);
             
-            ResponseEntity<SubmissionResultDto> result = controller.submit(
-                    target.course(), target.assignmentName(), target.groupName(), files, author1Authentication);
+            ResponseEntity<SubmissionResultDto> result = assertDoesNotThrow(() -> controller.submit(
+                    target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
             
             assertAll(
                 () -> assertSame(rejectingResult, result.getBody()),
                 () -> assertEquals(HttpStatus.OK, result.getStatusCode())
             );
+        }
+        
+        @Test
+        public void notAllowed() {
+            AuthManager authManager = mock(AuthManager.class);
+            when(authManager.isSubmissionAllowed(target, "author1")).thenReturn(false);
+            
+            SubmissionController controller = new SubmissionController(
+                    acceptingManager, mock(ISubmissionStorage.class), authManager);
+            
+            assertThrows(UnauthorizedException.class, () -> controller.submit(
+                    target.course(), target.assignmentName(), target.groupName(),
+                    files, author1Authentication));
         }
     }
     
@@ -120,7 +141,7 @@ public class SubmissionControllerTest {
         private ISubmissionStorage storageWith2Versions;
         
         @BeforeEach
-        public void initSubmission() throws StorageException {
+        public void setupMocks() throws StorageException {
             target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
             
             storageWith2Versions = mock(ISubmissionStorage.class);
@@ -133,7 +154,7 @@ public class SubmissionControllerTest {
         @Test
         public void versionList() {
             SubmissionController controller = new SubmissionController(
-                    mock(SubmissionManager.class), storageWith2Versions);
+                    mock(SubmissionManager.class), storageWith2Versions, allAllowedAuthManager);
             
             List<VersionDto> versions = assertDoesNotThrow(() -> controller.listVersions(
                     target.course(), target.assignmentName(), target.groupName(), author1Authentication));
@@ -146,6 +167,19 @@ public class SubmissionControllerTest {
             v2.setTimestamp(123654);
             
             assertEquals(List.of(v2, v1), versions);
+        }
+        
+        @Test
+        public void notAllowed() {
+            AuthManager authManager = mock(AuthManager.class);
+            when(authManager.isReplayAllowed(target, "author1")).thenReturn(false);
+            
+            SubmissionController controller = new SubmissionController(
+                    mock(SubmissionManager.class), mock(ISubmissionStorage.class), authManager);
+            
+            assertThrows(UnauthorizedException.class, () -> controller.listVersions(
+                    target.course(), target.assignmentName(), target.groupName(),
+                    author1Authentication));
         }
         
     }

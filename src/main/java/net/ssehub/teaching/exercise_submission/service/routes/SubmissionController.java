@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import net.ssehub.teaching.exercise_submission.service.auth.AuthManager;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 import net.ssehub.teaching.exercise_submission.service.dto.VersionDto;
@@ -39,15 +40,19 @@ public class SubmissionController {
     
     private ISubmissionStorage storage;
     
+    private AuthManager authManager;
+    
     /**
      * Creates this controller.
      * 
      * @param manager The manager that orchestrates the submissions (checks, storage, etc.).
      * @param storage The storage where submissions are placed (should be the same as used by the manager).
+     * @param authManager Checks that users a authorized to do the given operations.
      */
-    public SubmissionController(SubmissionManager manager, ISubmissionStorage storage) {
+    public SubmissionController(SubmissionManager manager, ISubmissionStorage storage, AuthManager authManager) {
         this.manager = manager;
         this.storage = storage;
+        this.authManager = authManager;
     }
 
     /**
@@ -62,6 +67,7 @@ public class SubmissionController {
      * @return The result of the submission.
      * 
      * @throws StorageException If a storage exception occurs.
+     * @throws UnauthorizedException If the user is not allowed to submit a new version to this target.
      */
     @PostMapping("/{course}/{assignment}/{group}")
     @PreAuthorize("permitAll()")
@@ -71,11 +77,16 @@ public class SubmissionController {
             @PathVariable String group,
             @RequestBody List<FileDto> files,
             Authentication auth)
-            throws StorageException {
+            throws StorageException, UnauthorizedException {
         
+        String username = auth.getName();
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
-        SubmissionBuilder submissionBuilder = new SubmissionBuilder(auth.getName());
         
+        if (!authManager.isSubmissionAllowed(target, username)) {
+            throw new UnauthorizedException();
+        }
+        
+        SubmissionBuilder submissionBuilder = new SubmissionBuilder(username);
         for (FileDto file : files) {
             submissionBuilder.addFile(Path.of(file.getPath()), Base64.getDecoder().decode(file.getContent()));
         }
@@ -102,6 +113,7 @@ public class SubmissionController {
      * @return The list of versions for that submission.
      * 
      * @throws StorageException If a storage exception occurs.
+     * @throws UnauthorizedException If the user is not allowed to replay this target.
      */
     @GetMapping("/{course}/{assignment}/{group}/versions")
     @PreAuthorize("permitAll()")
@@ -110,9 +122,16 @@ public class SubmissionController {
             @PathVariable String assignment,
             @PathVariable String group,
             Authentication auth)
-            throws StorageException {
+            throws StorageException, UnauthorizedException {
         
-        List<Version> version = storage.getVersions(new SubmissionTarget(course, assignment, group));
+        String username = auth.getName();
+        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
+        
+        if (!authManager.isReplayAllowed(target, username)) {
+            throw new UnauthorizedException();
+        }
+        
+        List<Version> version = storage.getVersions(target);
         
         return version.stream()
                 .map(v -> {
