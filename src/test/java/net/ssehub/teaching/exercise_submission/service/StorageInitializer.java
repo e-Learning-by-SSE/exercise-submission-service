@@ -14,7 +14,7 @@ import net.ssehub.teaching.exercise_submission.service.StorageInitializer.Initia
 public class StorageInitializer {
 
     @TempDir
-    private static Path testStorage = Path.of("teststorage"); 
+    protected static Path testStorage = Path.of("teststorage"); 
     
     static class Initializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
