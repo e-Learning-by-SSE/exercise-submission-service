@@ -1,5 +1,7 @@
 package net.ssehub.teaching.exercise_submission.service.dto;
 
+import java.util.Objects;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
@@ -60,5 +62,22 @@ public class VersionDto {
     public long getTimestamp() {
         return timestamp;
     }
-    
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(author, timestamp);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof VersionDto)) {
+            return false;
+        }
+        VersionDto other = (VersionDto) obj;
+        return Objects.equals(author, other.author) && timestamp == other.timestamp;
+    }
+
 }
