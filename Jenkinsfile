@@ -28,7 +28,7 @@ pipeline {
                     image = docker.image("${env.DOCKER_TARGET}")
                     docker.withRegistry('https://ghcr.io', 'github-ssejenkins') {
                         image.push("${version}") // pom project version
-                        image.push() // tagges version from name
+                        image.push() // tagged version from name
                     }
                 }
             }
