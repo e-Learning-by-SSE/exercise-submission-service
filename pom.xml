@@ -74,6 +74,24 @@
 						</publishRegistry>
 					</docker>
 				</configuration>
+				<!-- start during integration test phase so that openapi.json can be generated -->
+				<executions>
+					<execution>
+						<id>start-pre-integreation-test</id>
+						<goals>
+							<goal>start</goal>
+						</goals>
+						<configuration>
+							<arguments>--spring.profiles.active=openapi,--spring.profiles.active=test</arguments>
+						</configuration>
+					</execution>
+					<execution>
+						<id>stop-post-integreation-test</id>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 
 			<plugin>
@@ -129,6 +147,25 @@
 						</goals>
 					</execution>
 				</executions>
+			</plugin>
+
+			<!-- Create openapi.json during integreation test phase -->
+			<plugin>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-maven-plugin</artifactId>
+				<version>1.4</version>
+				<executions>
+					<execution>
+						<id>generate-openapi-json</id>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<outputFileName>openapi.json</outputFileName>
+					<outputDir>${project.build.directory}</outputDir>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -1,3 +1,6 @@
+# will be overriden by StorageInitializer in tests
+storage.location: .
+
 spring.security.oauth2.resourceserver:
     jwt:
         issuer-uri: http://localhost:8090/

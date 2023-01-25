@@ -9,7 +9,7 @@ pipeline {
                 withMaven(mavenSettingsConfig: 'mvn-elearn-repo-settings') {
                     sh 'mvn clean deploy spring-boot:build-image -Dspring-boot.build-image.publish=true'
                 }
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                archiveArtifacts artifacts: 'target/*.jar, target/openapi.json', fingerprint: true
             }
         }
         stage ('Analysis') {
