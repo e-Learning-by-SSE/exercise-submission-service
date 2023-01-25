@@ -3,7 +3,6 @@ package net.ssehub.teaching.exercise_submission.service.routes;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,13 +57,8 @@ public class SubmissionControllerIT extends StorageInitializer {
         assertAll(
             () -> assertEquals(HttpStatus.CREATED, request.getResponseStatus()),
             () -> assertEquals(1, Files.list(groupStorage).count()), // submission folder created
-            () -> {
-                SubmissionResultDto dto = request.parseResponse(SubmissionResultDto.class);
-                assertAll(
-                    () -> assertTrue(dto.accepted()),
-                    () -> assertEquals(List.of(), dto.messages())
-                );
-            }
+            () -> assertEquals(new SubmissionResultDto(true, List.of()),
+                    request.parseResponse(SubmissionResultDto.class))
         );
     }
     

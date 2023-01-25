@@ -3,7 +3,6 @@ package net.ssehub.teaching.exercise_submission.service.routes;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -100,7 +99,7 @@ public class SubmissionControllerTest {
                     target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
             
             assertAll(
-                () -> assertSame(acceptingResult, result.getBody()),
+                () -> assertEquals(acceptingResult, result.getBody()),
                 () -> assertEquals(HttpStatus.CREATED, result.getStatusCode())
             );
         }
@@ -114,7 +113,7 @@ public class SubmissionControllerTest {
                     target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
             
             assertAll(
-                () -> assertSame(rejectingResult, result.getBody()),
+                () -> assertEquals(rejectingResult, result.getBody()),
                 () -> assertEquals(HttpStatus.OK, result.getStatusCode())
             );
         }
