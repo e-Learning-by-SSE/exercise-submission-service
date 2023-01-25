@@ -1,8 +1,7 @@
 package net.ssehub.teaching.exercise_submission.service.dto;
 
-import java.util.Objects;
-
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 
 /**
  * Represents a version.
@@ -10,74 +9,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author Adam
  */
 @Schema(description = "A version of a submission")
-public class VersionDto {
-
+public record VersionDto(
     @Schema(
         description = "The username of the author that created the submission",
-        required = true,
-        example = "student1"
-    )
-    private String author;
+        requiredMode = RequiredMode.REQUIRED,
+        example = "student1")
+    String author,
     
     @Schema(
         description = "The timestamp when the version was created, as seconds since unix epoch",
-        required = true,
-        example = "1635177322"
-    )
-    private long timestamp;
-    
-    /**
-     * Sets the author of the version.
-     * 
-     * @param author The author of the version.
-     */
-    public void setAuthor(String author) {
-        this.author = author;
-    }
-    
-    
-    /**
-     * Gets the author of the version.
-     * 
-     * @return The author of the version.
-     */
-    public String getAuthor() {
-        return author;
-    }
-    
-    /**
-     * Sets the Unix timestamp of the version.
-     * 
-     * @param timestamp The Unix timestamp.
-     */
-    public void setTimestamp(long timestamp) {
-        this.timestamp = timestamp;
-    }
-    
-    /**
-     * Gets the Unix timestamp of the version.
-     * 
-     * @return The Unix timestamp.
-     */
-    public long getTimestamp() {
-        return timestamp;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(author, timestamp);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof VersionDto)) {
-            return false;
-        }
-        VersionDto other = (VersionDto) obj;
-        return Objects.equals(author, other.author) && timestamp == other.timestamp;
-    }
+        requiredMode = RequiredMode.REQUIRED,
+        example = "1635177322")
+    long timestamp) {
 
 }

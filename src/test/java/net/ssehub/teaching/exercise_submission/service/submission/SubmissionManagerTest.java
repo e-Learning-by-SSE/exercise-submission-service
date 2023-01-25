@@ -42,7 +42,7 @@ public class SubmissionManagerTest {
         
         assertAll(
             () -> verify(storage, never()).submitNewVersion(any(), any()),
-            () -> assertFalse(result.getAccepted())
+            () -> assertFalse(result.accepted())
         );
     }
     
@@ -62,7 +62,7 @@ public class SubmissionManagerTest {
         
         assertAll(
             () -> verify(storage, times(1)).submitNewVersion(target, submission),
-            () -> assertTrue(result.getAccepted())
+            () -> assertTrue(result.accepted())
         );
     }
     
@@ -81,7 +81,7 @@ public class SubmissionManagerTest {
         Submission submission = new SubmissionBuilder("s").build();
         SubmissionResultDto result = assertDoesNotThrow(() -> manager.submit(target, submission));
 
-        assertEquals(List.of(new CheckMessageDto("test", MessageType.ERROR, "mock")), result.getMessages());
+        assertEquals(List.of(new CheckMessageDto("test", MessageType.ERROR, "mock")), result.messages());
     }
     
     @Test
@@ -99,7 +99,7 @@ public class SubmissionManagerTest {
         Submission submission = new SubmissionBuilder("s").build();
         SubmissionResultDto result = assertDoesNotThrow(() -> manager.submit(target, submission));
 
-        assertEquals(List.of(new CheckMessageDto("test", MessageType.ERROR, "mock")), result.getMessages());
+        assertEquals(List.of(new CheckMessageDto("test", MessageType.ERROR, "mock")), result.messages());
     }
     
 }

@@ -69,9 +69,9 @@ public class SubmissionControllerTest {
         @BeforeEach
         public void setupMocks() throws StorageException {
             files = List.of(
-                    new FileDto("Main.java", "testcontent"),
-                    new FileDto("util/Util.java", "testcontent")
-                    );
+                FileDto.fromStringContent("Main.java", "testcontent"),
+                FileDto.fromStringContent("util/Util.java", "testcontent")
+            );
             
             SubmissionBuilder submissionBuilder = new SubmissionBuilder("author1");
             submissionBuilder.addUtf8File(Path.of("Main.java"), "testcontent");
@@ -79,16 +79,14 @@ public class SubmissionControllerTest {
             Submission submission = submissionBuilder.build();
             
             acceptingManager = mock(SubmissionManager.class);
-            acceptingResult = new SubmissionResultDto();
-            acceptingResult.setAccepted(true);
-            acceptingResult.setMessages(List.of(new CheckMessageDto("test", MessageType.WARNING, "mock")));
+            acceptingResult = new SubmissionResultDto(true,
+                    List.of(new CheckMessageDto("test", MessageType.WARNING, "mock")));
             when(acceptingManager.submit(target, submission))
                 .thenReturn(acceptingResult);
             
             rejectingManager = mock(SubmissionManager.class);
-            rejectingResult = new SubmissionResultDto();
-            rejectingResult.setAccepted(false);
-            rejectingResult.setMessages(List.of(new CheckMessageDto("test", MessageType.WARNING, "mock")));
+            rejectingResult = new SubmissionResultDto(false,
+                    List.of(new CheckMessageDto("test", MessageType.WARNING, "mock")));
             when(rejectingManager.submit(target, submission))
                 .thenReturn(rejectingResult);
         }
@@ -139,7 +137,7 @@ public class SubmissionControllerTest {
             SubmissionController controller = new SubmissionController(
                     rejectingManager, mock(ISubmissionStorage.class), allAllowedAuthManager);
             
-            List<FileDto> files = List.of(new FileDto("../test.txt", "testcontent"));
+            List<FileDto> files = List.of(FileDto.fromStringContent("../test.txt", "testcontent"));
             
             ResponseEntity<SubmissionResultDto> result = assertDoesNotThrow(() -> controller.submit(
                     target.course(), target.assignmentName(), target.groupName(), files, author1Authentication));
@@ -171,14 +169,7 @@ public class SubmissionControllerTest {
             List<VersionDto> versions = assertDoesNotThrow(() -> controller.listVersions(
                     target.course(), target.assignmentName(), target.groupName(), author1Authentication));
             
-            VersionDto v1 = new VersionDto();
-            v1.setAuthor("author1");
-            v1.setTimestamp(123456);
-            VersionDto v2 = new VersionDto();
-            v2.setAuthor("author2");
-            v2.setTimestamp(123654);
-            
-            assertEquals(List.of(v2, v1), versions);
+            assertEquals(List.of(new VersionDto("author2", 123654), new VersionDto("author1", 123456)), versions);
         }
         
         @Test
@@ -245,7 +236,7 @@ public class SubmissionControllerTest {
             List<FileDto> files = assertDoesNotThrow(() -> controller.getVersion(
                     target.course(), target.assignmentName(), target.groupName(), 123456, author1Authentication));
             
-            assertEquals(List.of(new FileDto("src/Main.java", "some content")), files);
+            assertEquals(List.of(FileDto.fromStringContent("src/Main.java", "some content")), files);
         }
         
     }

@@ -51,7 +51,7 @@ public class SubmissionControllerIT extends StorageInitializer {
                 .method(HttpMethod.POST)
                 .url("/submission/{course}/{assignment}/{group}")
                 .urlVariables("java-sose23", "Homework05", "JP123")
-                .body(List.of(new FileDto("Main.java", "content...")))
+                .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
                 .authenticate("author1")
                 .perform();
         
@@ -61,8 +61,8 @@ public class SubmissionControllerIT extends StorageInitializer {
             () -> {
                 SubmissionResultDto dto = request.parseResponse(SubmissionResultDto.class);
                 assertAll(
-                    () -> assertTrue(dto.getAccepted()),
-                    () -> assertEquals(List.of(), dto.getMessages())
+                    () -> assertTrue(dto.accepted()),
+                    () -> assertEquals(List.of(), dto.messages())
                 );
             }
         );
@@ -77,7 +77,7 @@ public class SubmissionControllerIT extends StorageInitializer {
                 .method(HttpMethod.POST)
                 .url("/submission/{course}/{assignment}/{group}")
                 .urlVariables("java-sose23", "Homework05", "JP123")
-                .body(List.of(new FileDto("Main.java", "content...")))
+                .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
                 .perform();
         
         assertAll(

@@ -2,9 +2,9 @@ package net.ssehub.teaching.exercise_submission.service.dto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Objects;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.Schema.RequiredMode;
 
 /**
  * A file in a submission.
@@ -12,28 +12,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
  * @author Adam
  */
 @Schema(description = "A single file in a submission")
-public class FileDto {
-
+public record FileDto(
     @Schema(
         description = "Relative path of this file in the submission directory",
-        required = true,
+        requiredMode = RequiredMode.REQUIRED,
         example = "dir/Main.java"
     )
-    private String path;
+    String path,
     
     @Schema(
         description = "Base64-encoded content of the file",
-        required = true,
+        requiredMode = RequiredMode.REQUIRED,
         example = "cGFja2FnZSBkaXI7CgpwdWJsaWMgY2xhc3MgTWFpbiB7CgogICAgcHVibGljIHN0YXRpYyB2b2lk"
                 + "IG1haW4oU3RyaW5nW10gYXJncykgewogICAgICAgIFN5c3RlbS5vdXQucHJpbnRsbigiSGVsbG8g"
                 + "V29ybGQhIik7CiAgICB9Cgp9Cg==")
-    private String content;
-
-    /**
-     * Standard constructor for JSON de-serializing.
-     */
-    public FileDto() {
-    }
+    String content) {
     
     /**
      * Creates a {@link FileDto} with given path and content.
@@ -42,8 +35,7 @@ public class FileDto {
      * @param content The content of the file.
      */
     public FileDto(String path, byte[] content) {
-        this.path = path;
-        this.content = Base64.getEncoder().encodeToString(content);
+        this(path, Base64.getEncoder().encodeToString(content));
     }
     
     /**
@@ -51,62 +43,11 @@ public class FileDto {
      * 
      * @param path The relative path of this file in the submission directory.
      * @param nonEncodedcontent The string content of the file.
-     */
-    public FileDto(String path, String nonEncodedcontent) {
-        this(path, nonEncodedcontent.getBytes(StandardCharsets.UTF_8));
-    }
-    
-    /**
-     * Returns the relative path of this file in the submission directory.
      * 
-     * @return The relative file path.
+     * @return The created {@link FileDto}.
      */
-    public String getPath() {
-        return path;
-    }
-
-    /**
-     * Sets the relative path of this file in the submission directory.
-     * 
-     * @param path The relative file path.
-     */
-    public void setPath(String path) {
-        this.path = path;
-    }
-    
-    /**
-     * Gets the base64-encoded of this file.
-     * 
-     * @return The base64-encoded content.
-     */
-    public String getContent() {
-        return content;
-    }
-
-    /**
-     * Sets the base64-encoded of this file.
-     * 
-     * @param content The base64-encoded content.
-     */
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(content, path);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof FileDto)) {
-            return false;
-        }
-        FileDto other = (FileDto) obj;
-        return Objects.equals(content, other.content) && Objects.equals(path, other.path);
+    public static FileDto fromStringContent(String path, String nonEncodedcontent) {
+        return new FileDto(path, nonEncodedcontent.getBytes(StandardCharsets.UTF_8));
     }
     
 }

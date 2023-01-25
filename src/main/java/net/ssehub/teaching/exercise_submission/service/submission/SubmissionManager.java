@@ -80,11 +80,7 @@ public class SubmissionManager {
             storage.submitNewVersion(target, submission);
         }
         
-        SubmissionResultDto result = new SubmissionResultDto();
-        result.setAccepted(allPassed);
-        result.setMessages(messages);
-        
-        return result;
+        return new SubmissionResultDto(allPassed, messages);
     }
     
 }

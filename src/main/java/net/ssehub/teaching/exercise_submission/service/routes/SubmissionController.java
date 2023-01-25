@@ -167,12 +167,12 @@ public class SubmissionController {
         try {
             SubmissionBuilder submissionBuilder = new SubmissionBuilder(username);
             for (FileDto file : files) {
-                submissionBuilder.addFile(Path.of(file.getPath()), Base64.getDecoder().decode(file.getContent()));
+                submissionBuilder.addFile(Path.of(file.path()), Base64.getDecoder().decode(file.content()));
             }
             
             SubmissionResultDto resultDto = manager.submit(target, submissionBuilder.build());
             HttpStatus status;
-            if (resultDto.getAccepted()) {
+            if (resultDto.accepted()) {
                 status = HttpStatus.CREATED;
             } else {
                 status = HttpStatus.OK;
@@ -256,12 +256,7 @@ public class SubmissionController {
         List<Version> version = storage.getVersions(target);
         
         return version.stream()
-                .map(v -> {
-                    VersionDto dto = new VersionDto();
-                    dto.setAuthor(v.author());
-                    dto.setTimestamp(v.creationTime().getEpochSecond());
-                    return dto;
-                })
+                .map(v -> new VersionDto(v.author(), v.creationTime().getEpochSecond()))
                 .toList();
     }
     
