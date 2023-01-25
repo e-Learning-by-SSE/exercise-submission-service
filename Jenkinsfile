@@ -18,7 +18,7 @@ pipeline {
             }
         }
 
-        stage('Publish') {
+        stage('Publish Docker') {
             steps {
                 script {
                     version = sh(
