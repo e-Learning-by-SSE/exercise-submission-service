@@ -2,6 +2,7 @@ package net.ssehub.teaching.exercise_submission.service.dto;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -89,6 +90,23 @@ public class FileDto {
      */
     public void setContent(String content) {
         this.content = content;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(content, path);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof FileDto)) {
+            return false;
+        }
+        FileDto other = (FileDto) obj;
+        return Objects.equals(content, other.content) && Objects.equals(path, other.path);
     }
     
 }

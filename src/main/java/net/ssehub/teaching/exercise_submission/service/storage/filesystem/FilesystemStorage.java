@@ -191,7 +191,7 @@ public class FilesystemStorage implements ISubmissionStorage {
         
         Path versionDir = groupDir.resolve(versionToFilename(version));
         if (!Files.isDirectory(versionDir)) {
-            throw new NoSuchTargetException(target, version);
+            throw new NoSuchTargetException(target, version.creationTime().getEpochSecond());
         }
         
         SubmissionBuilder builder = new SubmissionBuilder(version.author());

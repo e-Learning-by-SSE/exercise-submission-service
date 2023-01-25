@@ -26,6 +26,7 @@ import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 import net.ssehub.teaching.exercise_submission.service.dto.VersionDto;
 import net.ssehub.teaching.exercise_submission.service.storage.ISubmissionStorage;
+import net.ssehub.teaching.exercise_submission.service.storage.NoSuchTargetException;
 import net.ssehub.teaching.exercise_submission.service.storage.StorageException;
 import net.ssehub.teaching.exercise_submission.service.submission.Submission;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionBuilder;
@@ -36,12 +37,16 @@ import net.ssehub.teaching.exercise_submission.service.submission.checks.ResultM
 
 public class SubmissionControllerTest {
     
+    private SubmissionTarget target;
+    
     private Authentication author1Authentication;
     
     private AuthManager allAllowedAuthManager;
     
     @BeforeEach
     public void setupMocks() {
+        target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
+        
         author1Authentication = mock(Authentication.class);
         when(author1Authentication.getName()).thenReturn("author1");
         
@@ -53,8 +58,6 @@ public class SubmissionControllerTest {
     @Nested
     class Submit {
         
-        private SubmissionTarget target;
-        
         private List<FileDto> files;
         
         private SubmissionManager acceptingManager;
@@ -65,7 +68,6 @@ public class SubmissionControllerTest {
         
         @BeforeEach
         public void setupMocks() throws StorageException {
-            target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
             files = List.of(
                     new FileDto("Main.java", "testcontent"),
                     new FileDto("util/Util.java", "testcontent")
@@ -150,14 +152,10 @@ public class SubmissionControllerTest {
     @Nested
     class ListVersions {
         
-        private SubmissionTarget target;
-        
         private ISubmissionStorage storageWith2Versions;
         
         @BeforeEach
         public void setupMocks() throws StorageException {
-            target = new SubmissionTarget("java-sose23", "Homework03", "JP042");
-            
             storageWith2Versions = mock(ISubmissionStorage.class);
             when(storageWith2Versions.getVersions(target)).thenReturn(List.of(
                 new Version("author2", Instant.ofEpochSecond(123654)),
@@ -194,6 +192,60 @@ public class SubmissionControllerTest {
             assertThrows(UnauthorizedException.class, () -> controller.listVersions(
                     target.course(), target.assignmentName(), target.groupName(),
                     author1Authentication));
+        }
+        
+    }
+    
+    @Nested
+    class GetVersion {
+        
+        @Test
+        public void notAllowed() {
+            AuthManager authManager = mock(AuthManager.class);
+            when(authManager.isReplayAllowed(target, "author1")).thenReturn(false);
+            
+            SubmissionController controller = new SubmissionController(
+                    mock(SubmissionManager.class), mock(ISubmissionStorage.class), authManager);
+            
+            assertThrows(UnauthorizedException.class, () -> controller.getVersion(
+                    target.course(), target.assignmentName(), target.groupName(), 1234L,
+                    author1Authentication));
+        }
+        
+        @Test
+        public void versionDoesntExist() {
+            ISubmissionStorage storage = mock(ISubmissionStorage.class);
+            when(assertDoesNotThrow(() -> storage.getVersions(target)))
+                .thenReturn(List.of(new Version("someone", Instant.ofEpochSecond(123456))));
+            
+            SubmissionController controller = new SubmissionController(
+                    mock(SubmissionManager.class), storage, allAllowedAuthManager);
+            
+            assertThrows(NoSuchTargetException.class, () -> controller.getVersion(
+                    target.course(), target.assignmentName(), target.groupName(), 654321, author1Authentication));
+        }
+        
+        @Test
+        public void versionReturned() {
+            Version version = new Version("someone", Instant.ofEpochSecond(123456));
+            SubmissionBuilder sb = new SubmissionBuilder("someauthor");
+            sb.addUtf8File(Path.of("src/Main.java"), "some content");
+            Submission submission = sb.build();
+            
+            ISubmissionStorage storage = mock(ISubmissionStorage.class);
+            when(assertDoesNotThrow(() -> storage.getVersions(target)))
+                .thenReturn(List.of(version));
+            
+            when(assertDoesNotThrow(() -> storage.getSubmission(target, version)))
+                .thenReturn(submission);
+            
+            SubmissionController controller = new SubmissionController(
+                    mock(SubmissionManager.class), storage, allAllowedAuthManager);
+            
+            List<FileDto> files = assertDoesNotThrow(() -> controller.getVersion(
+                    target.course(), target.assignmentName(), target.groupName(), 123456, author1Authentication));
+            
+            assertEquals(List.of(new FileDto("src/Main.java", "some content")), files);
         }
         
     }

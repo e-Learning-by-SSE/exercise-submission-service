@@ -1,7 +1,6 @@
 package net.ssehub.teaching.exercise_submission.service.storage;
 
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarget;
-import net.ssehub.teaching.exercise_submission.service.submission.Version;
 
 /**
  * Indicates that the given submission target does not exist.
@@ -36,10 +35,10 @@ public class NoSuchTargetException extends StorageException {
      * Creates this exception for a missing version within the given target.
      * 
      * @param target The assignment and group.
-     * @param version The version that does not exist in the target.
+     * @param timestamp The timestamp of a version that does not exist in the target.
      */
-    public NoSuchTargetException(SubmissionTarget target, Version version) {
-        super("The version " + version.creationTime().getEpochSecond() + "does not exist for group "
+    public NoSuchTargetException(SubmissionTarget target, long timestamp) {
+        super("The version " + timestamp + "does not exist for group "
                 + target.groupName() + " in assignment " + target.assignmentName() + " in course "
                 + target.course());
     }

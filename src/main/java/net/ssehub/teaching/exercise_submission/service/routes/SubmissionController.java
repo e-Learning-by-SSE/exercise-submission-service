@@ -2,6 +2,7 @@ package net.ssehub.teaching.exercise_submission.service.routes;
 
 import java.nio.file.Path;
 import java.util.Base64;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -29,7 +29,9 @@ import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 import net.ssehub.teaching.exercise_submission.service.dto.VersionDto;
 import net.ssehub.teaching.exercise_submission.service.storage.ISubmissionStorage;
+import net.ssehub.teaching.exercise_submission.service.storage.NoSuchTargetException;
 import net.ssehub.teaching.exercise_submission.service.storage.StorageException;
+import net.ssehub.teaching.exercise_submission.service.submission.Submission;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionBuilder;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionManager;
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarget;
@@ -73,13 +75,14 @@ public class SubmissionController {
      * Route for adding a new submission.
      * 
      * @param course The course to add the submission for.
-     * @param assignment The assignment to add the submission for.
-     * @param group The group to add the submission for.
+     * @param assignmentName The assignment to add the submission for.
+     * @param groupName The group to add the submission for.
      * @param files The files of the submission.
      * @param auth The authentication.
      * 
      * @return The result of the submission.
      * 
+     * @throws NoSuchTargetException If the given target does not exist.
      * @throws StorageException If a storage exception occurs.
      * @throws UnauthorizedException If the user is not allowed to submit a new version to this target.
      */
@@ -136,13 +139,13 @@ public class SubmissionController {
             @Parameter(
                 description = "Name of the assignment to submit to",
                 example = "Homework02")
-            String assignment,
+            String assignmentName,
             
             @PathVariable
             @Parameter(
                 description = "Name of the group (or username for single assignments) to submit to",
                 example = "JP024")
-            String group,
+            String groupName,
             
             @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The files of this submission")
@@ -150,10 +153,10 @@ public class SubmissionController {
             
             Authentication auth)
             
-            throws StorageException, UnauthorizedException {
+            throws NoSuchTargetException, StorageException, UnauthorizedException {
         
         String username = auth.getName();
-        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
+        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
         
         if (!authManager.isSubmissionAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -188,12 +191,13 @@ public class SubmissionController {
      * Route for retrieving the list of submitted versions.
      * 
      * @param course The course where the submission is located.
-     * @param assignment The assignment where the submission is located.
-     * @param group The group where the submission is located.
+     * @param assignmentName The assignment where the submission is located.
+     * @param groupName The group where the submission is located.
      * @param auth The authentication.
      * 
      * @return The list of versions for that submission.
      * 
+     * @throws NoSuchTargetException If the given target does not exist.
      * @throws StorageException If a storage exception occurs.
      * @throws UnauthorizedException If the user is not allowed to replay this target.
      */
@@ -202,10 +206,8 @@ public class SubmissionController {
         responses = {
             @ApiResponse(
                 responseCode = "200",
-                description = "List of versions in reverse-chronological order (i.e. latest version first) is returned",
-                content = {
-                    @Content(array = @ArraySchema(schema = @Schema(implementation = VersionDto.class)))
-                }),
+                description = "List of versions in reverse-chronological order (i.e. latest version first)"
+                        + " is returned"),
             @ApiResponse(
                 responseCode = "403",
                 description = "User is not authorized to get the version list",
@@ -232,20 +234,20 @@ public class SubmissionController {
             @Parameter(
                 description = "Name of the assignment to get versions for",
                 example = "Homework02")
-            String assignment,
+            String assignmentName,
             
             @PathVariable
             @Parameter(
                 description = "Name of the group (or username for single assignments) to get versions for",
                 example = "JP024")
-            String group,
+            String groupName,
             
             Authentication auth)
             
-            throws StorageException, UnauthorizedException {
+            throws NoSuchTargetException, StorageException, UnauthorizedException {
         
         String username = auth.getName();
-        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
+        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -261,6 +263,101 @@ public class SubmissionController {
                     return dto;
                 })
                 .toList();
+    }
+    
+    /**
+     * Route for retrieving a given version of a submission.
+     * 
+     * @param course The course where the submission is located.
+     * @param assignmentName The assignment where the submission is located.
+     * @param groupName The group where the submission is located.
+     * @param timestamp The timestamp identifying the submission.
+     * @param auth The authentication.
+     * 
+     * @return The list of files of the submission.
+     * 
+     * @throws NoSuchTargetException If the given target does not exist.
+     * @throws StorageException If a storage excpetion occurs.
+     * @throws UnauthorizedException If the user is not allowed to replay this target.
+     */
+    @Operation(
+        description = "Retrieves the specified submission of the given assignment and group",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Submission is returned"),
+            @ApiResponse(
+                responseCode = "403",
+                description = "User is not authorized to retrieve a submission",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Assignment or group does not exist, or the specified version does not exist",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "500",
+                description = "An unexpected internal server error occurred",
+                content = {@Content})
+        }
+    )
+    @GetMapping("/{course}/{assignment}/{group}/{version}")
+    public List<FileDto> getVersion(
+            @PathVariable
+            @Parameter(
+                description = "ID of the course that contains the assignment",
+                example = "java-sose23")
+            String course,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the assignment to retrieve from",
+                example = "Homework02")
+            String assignmentName,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the group (or username for single assignments) to retrieve from",
+                example = "JP024")
+            String groupName,
+            
+            @PathVariable
+            @Parameter(
+                description = "Identifies the version as a unix timestamp (seconds since epoch)",
+                example = "1635177322")
+            long timestamp,
+            
+            Authentication auth)
+    
+            throws NoSuchTargetException, StorageException, UnauthorizedException {
+        
+        String username = auth.getName();
+        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
+        
+        if (!authManager.isReplayAllowed(target, username)) {
+            throw new UnauthorizedException();
+        }
+        
+        List<Version> versions = storage.getVersions(target);
+        Version match = null;
+        for (Version version : versions) {
+            if (version.creationTime().getEpochSecond() == timestamp) {
+                match = version;
+                break;
+            }
+        }
+        
+        if (match != null) {
+            Submission submission = storage.getSubmission(target, match);
+            
+            List<FileDto> files = new LinkedList<>();
+            for (Path filepath : submission.getFilepaths()) {
+                files.add(new FileDto(
+                        filepath.toString().replace('\\', '/'),
+                        submission.getFileContent(filepath)));
+            }
+            return files;
+            
+        } else {
+            throw new NoSuchTargetException(target, timestamp);
+        }
     }
     
 }
