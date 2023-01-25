@@ -13,23 +13,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.ssehub.teaching.exercise_submission.service.StorageInitializer;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
 
-@SpringBootTest(properties = "spring.security.oauth2.resourceserver.jwt.issuer-uri=none")
+@SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 public class SubmissionControllerIT extends StorageInitializer {
 
@@ -45,36 +47,117 @@ public class SubmissionControllerIT extends StorageInitializer {
         Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
         assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
         
-        MvcResult result = post("/submission/{course}/{assignment}/{group}",
-                List.of(new FileDto("Main.java", "content...")),
-                "author1",
-                "java-sose23", "Homework05", "JP123");
-        
-        SubmissionResultDto dto = parseResponse(result, SubmissionResultDto.class);
+        Request request = new Request(mvc)
+                .method(HttpMethod.POST)
+                .url("/submission/{course}/{assignment}/{group}")
+                .urlVariables("java-sose23", "Homework05", "JP123")
+                .body(List.of(new FileDto("Main.java", "content...")))
+                .authenticate("author1")
+                .perform();
         
         assertAll(
-            () -> assertEquals(HttpStatus.CREATED.value(), result.getResponse().getStatus()),
-            () -> assertEquals(1, Files.list(groupStorage).count()), // submission folder
-            () -> assertTrue(dto.getAccepted()),
-            () -> assertEquals(List.of(), dto.getMessages())
+            () -> assertEquals(HttpStatus.CREATED, request.getResponseStatus()),
+            () -> assertEquals(1, Files.list(groupStorage).count()), // submission folder created
+            () -> {
+                SubmissionResultDto dto = request.parseResponse(SubmissionResultDto.class);
+                assertAll(
+                    () -> assertTrue(dto.getAccepted()),
+                    () -> assertEquals(List.of(), dto.getMessages())
+                );
+            }
         );
     }
     
-    public MvcResult post(String urlTemplate, Object body, String username, Object... urlVariables) {
-        return assertDoesNotThrow(
-            () -> mvc.perform(postRequest(urlTemplate, body, username, urlVariables))).andReturn();
+    @Test
+    public void unauthenticatedRejected() {
+        Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
+        assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
+        
+        Request request = new Request(mvc)
+                .method(HttpMethod.POST)
+                .url("/submission/{course}/{assignment}/{group}")
+                .urlVariables("java-sose23", "Homework05", "JP123")
+                .body(List.of(new FileDto("Main.java", "content...")))
+                .perform();
+        
+        assertAll(
+            () -> assertEquals(HttpStatus.FORBIDDEN, request.getResponseStatus()),
+            () -> assertEquals(0, Files.list(groupStorage).count()) // no submission folder created
+        );
     }
     
-    public <T> T parseResponse(MvcResult response, Class<T> responseType) {
-        return assertDoesNotThrow(() -> json.readValue(response.getResponse().getContentAsString(), responseType));
-    }
-    
-    private RequestBuilder postRequest(String urlTemplate, Object body, String username, Object... urlVariables)
-            throws JsonProcessingException {
-        return MockMvcRequestBuilders.post(urlTemplate, urlVariables)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(json.writeValueAsString(body))
-                .with(SecurityMockMvcRequestPostProcessors.jwt().jwt(b -> b.subject(username)));
+    private class Request {
+        
+        private MockMvc mvc;
+        
+        private HttpMethod method = HttpMethod.GET;
+        
+        private String urlTemplate;
+        
+        private Object[] urlVariables = new Object[0];
+        
+        private Object body;
+        
+        private String username;
+        
+        private HttpStatus resultStatus;
+        
+        private String resultContent;
+        
+        public Request(MockMvc mvc) {
+            this.mvc = mvc;
+        }
+        
+        public Request method(HttpMethod method) {
+            this.method = method;
+            return this;
+        }
+        
+        public Request url(String urlTemplate) {
+            this.urlTemplate = urlTemplate;
+            return this;
+        }
+        
+        public Request urlVariables(Object... urlVariables) {
+            this.urlVariables = urlVariables;
+            return this;
+        }
+        
+        public Request body(Object body) {
+            this.body = body;
+            return this;
+        }
+        
+        public Request authenticate(String username) {
+            this.username = username;
+            return this;
+        }
+        
+        public Request perform() {
+            MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.request(method, urlTemplate, urlVariables);
+            if (body != null) {
+                builder.contentType(MediaType.APPLICATION_JSON);
+                builder.content(assertDoesNotThrow(() -> json.writeValueAsString(body)));
+            }
+            if (username != null) {
+                builder.with(SecurityMockMvcRequestPostProcessors.jwt().jwt(b -> b.subject(username)));
+            }
+            
+            MvcResult result = assertDoesNotThrow(() -> mvc.perform(builder)).andReturn();
+            resultStatus = HttpStatus.resolve(result.getResponse().getStatus());
+            resultContent = assertDoesNotThrow(() -> result.getResponse().getContentAsString());
+            
+            return this;
+        }
+        
+        public HttpStatus getResponseStatus() {
+            return resultStatus;
+        }
+        
+        public <T> T parseResponse(Class<T> type) {
+            return assertDoesNotThrow(() -> json.readValue(resultContent, type));
+        }
+        
     }
     
 }

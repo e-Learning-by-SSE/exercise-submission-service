@@ -7,7 +7,6 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -126,7 +125,6 @@ public class SubmissionController {
         }
     )
     @PostMapping("/{course}/{assignment}/{group}")
-    @PreAuthorize("permitAll()")
     public ResponseEntity<SubmissionResultDto> submit(
             @PathVariable
             @Parameter(
@@ -223,7 +221,6 @@ public class SubmissionController {
         }
     )
     @GetMapping("/{course}/{assignment}/{group}/versions")
-    @PreAuthorize("permitAll()")
     public List<VersionDto> listVersions(
             @PathVariable
             @Parameter(
