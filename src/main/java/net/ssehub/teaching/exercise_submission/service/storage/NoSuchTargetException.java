@@ -12,16 +12,6 @@ public class NoSuchTargetException extends StorageException {
     private static final long serialVersionUID = -4647180918103452956L;
     
     /**
-     * Creates this exception for a missing assignment.
-     * 
-     * @param course The course of the assignment that doesn't exist.
-     * @param assignmentName The name of the assignment that doesn't exist.
-     */
-    public NoSuchTargetException(String course, String assignmentName) {
-        super("The assignment " + assignmentName + " in course " + course + " does not exist");
-    }
-    
-    /**
      * Creates this exception for a missing target.
      * 
      * @param target The assignment and group that doesn't exist.

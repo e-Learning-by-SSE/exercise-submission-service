@@ -11,13 +11,6 @@ public class StorageException extends Exception {
 
     /**
      * Creates this exception.
-     */
-    public StorageException() {
-        super();
-    }
-    
-    /**
-     * Creates this exception.
      * 
      * @param cause The cause.
      */
@@ -32,16 +25,6 @@ public class StorageException extends Exception {
      */
     public StorageException(String messsage) {
         super(messsage);
-    }
-    
-    /**
-     * Creates this exception.
-     * 
-     * @param messsage The detail message.
-     * @param cause The cause.
-     */
-    public StorageException(String messsage, Throwable cause) {
-        super(messsage, cause);
     }
     
 }

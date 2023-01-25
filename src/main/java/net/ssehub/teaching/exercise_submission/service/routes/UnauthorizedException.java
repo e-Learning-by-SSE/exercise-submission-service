@@ -16,13 +16,4 @@ public class UnauthorizedException extends Exception {
         super();
     }
 
-    /**
-     * Creates this exception.
-     * 
-     * @param cause The cause of this exception.
-     */
-    public UnauthorizedException(Throwable cause) {
-        super(cause);
-    }
-
 }
