@@ -222,11 +222,47 @@ public class SubmissionTest {
         files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission2 = new Submission("author", files);
         
-        assertEquals(submission1, submission2);
+        assertTrue(submission1.equals(submission2));
     }
     
     @Test
-    public void towSubmissionEqualHash() {
+    public void identityEqual() {
+        Submission submission1 = new Submission("author", Map.of());
+        
+        assertTrue(submission1.equals(submission1));
+    }
+    
+    @Test
+    @SuppressWarnings("unlikely-arg-type")
+    public void otherTypeNotEqual() {
+        Submission submission1 = new Submission("author", Map.of());
+        
+        assertFalse(submission1.equals(""));
+    }
+    
+    @Test
+    public void differentAuthorNotEqual() {
+        Submission submission1 = new Submission("author1", Map.of());
+        Submission submission2 = new Submission("author2", Map.of());
+        
+        assertFalse(submission1.equals(submission2));
+    }
+    
+    @Test
+    public void differentFilesNotEqual() {
+        Map<Path, byte[]> files = new HashMap<>();
+        files.put(Path.of("test1.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission1 = new Submission("author", files);
+        
+        files = new HashMap<>();
+        files.put(Path.of("test2.txt"), "other content\n".getBytes(StandardCharsets.UTF_8));
+        Submission submission2 = new Submission("author", files);
+        
+        assertFalse(submission1.equals(submission2));
+    }
+    
+    @Test
+    public void twoEqualSubmissionEqualHash() {
         Map<Path, byte[]> files = new HashMap<>();
         files.put(Path.of("test.txt"), "some content\n".getBytes(StandardCharsets.UTF_8));
         Submission submission1 = new Submission("author", files);

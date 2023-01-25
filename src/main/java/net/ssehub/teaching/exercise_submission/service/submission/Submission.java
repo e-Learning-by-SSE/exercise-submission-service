@@ -50,7 +50,6 @@ public class Submission {
             return Arrays.equals(bytes, other.bytes);
         }
         
-        
     }
     
     private String author;
