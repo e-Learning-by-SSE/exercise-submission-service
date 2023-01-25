@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -15,7 +16,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,44 +40,61 @@ public class SubmissionControllerIT extends StorageInitializer {
     @Autowired
     private ObjectMapper json;
     
-    @Test
-    @WithMockUser(username = "author1")
-    public void successfulSubmission() {
-        Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
-        assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
+    @Nested
+    class Submit {
         
-        Request request = new Request(mvc)
-                .method(HttpMethod.POST)
-                .url("/submission/{course}/{assignment}/{group}")
-                .urlVariables("java-sose23", "Homework05", "JP123")
-                .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
-                .authenticate("author1")
-                .perform();
+        @Test
+        public void successful() {
+            Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
+            assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
+            
+            Request request = new Request(mvc)
+                    .method(HttpMethod.POST)
+                    .url("/submission/{course}/{assignment}/{group}")
+                    .urlVariables("java-sose23", "Homework05", "JP123")
+                    .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
+                    .authenticate("author1")
+                    .perform();
+            
+            assertAll(
+                () -> assertEquals(HttpStatus.CREATED, request.getResponseStatus()),
+                () -> assertEquals(1, Files.list(groupStorage).count()), // submission folder created
+                () -> assertEquals(new SubmissionResultDto(true, List.of()),
+                        request.parseResponse(SubmissionResultDto.class))
+            );
+        }
         
-        assertAll(
-            () -> assertEquals(HttpStatus.CREATED, request.getResponseStatus()),
-            () -> assertEquals(1, Files.list(groupStorage).count()), // submission folder created
-            () -> assertEquals(new SubmissionResultDto(true, List.of()),
-                    request.parseResponse(SubmissionResultDto.class))
-        );
-    }
-    
-    @Test
-    public void unauthenticatedRejected() {
-        Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
-        assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
+        @Test
+        public void unauthenticatedForbidden() {
+            Path groupStorage = testStorage.resolve("java-sose23/Homework05/JP123");
+            assertDoesNotThrow(() -> Files.createDirectories(groupStorage));
+            
+            Request request = new Request(mvc)
+                    .method(HttpMethod.POST)
+                    .url("/submission/{course}/{assignment}/{group}")
+                    .urlVariables("java-sose23", "Homework05", "JP123")
+                    .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
+                    .perform();
+            
+            assertAll(
+                () -> assertEquals(HttpStatus.FORBIDDEN, request.getResponseStatus()),
+                () -> assertEquals(0, Files.list(groupStorage).count()) // no submission folder created
+            );
+        }
         
-        Request request = new Request(mvc)
-                .method(HttpMethod.POST)
-                .url("/submission/{course}/{assignment}/{group}")
-                .urlVariables("java-sose23", "Homework05", "JP123")
-                .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
-                .perform();
+        @Test
+        public void notExistingTargetNotFound() {
+            Request request = new Request(mvc)
+                    .method(HttpMethod.POST)
+                    .url("/submission/{course}/{assignment}/{group}")
+                    .urlVariables("java-sose23", "Homework05", "JP123")
+                    .body(List.of(FileDto.fromStringContent("Main.java", "content...")))
+                    .authenticate("author1")
+                    .perform();
+            
+            assertEquals(HttpStatus.NOT_FOUND, request.getResponseStatus());
+        }
         
-        assertAll(
-            () -> assertEquals(HttpStatus.FORBIDDEN, request.getResponseStatus()),
-            () -> assertEquals(0, Files.list(groupStorage).count()) // no submission folder created
-        );
     }
     
     private class Request {

@@ -1,5 +1,8 @@
 package net.ssehub.teaching.exercise_submission.service.storage;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
 import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarget;
 
 /**
@@ -7,6 +10,7 @@ import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarg
  * 
  * @author Adam
  */
+@ResponseStatus(HttpStatus.NOT_FOUND)
 public class NoSuchTargetException extends StorageException {
 
     private static final long serialVersionUID = -4647180918103452956L;
