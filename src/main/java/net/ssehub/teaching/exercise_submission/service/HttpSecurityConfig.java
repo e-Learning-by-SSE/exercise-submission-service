@@ -31,9 +31,9 @@ public class HttpSecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     // checkstyle: resume exception type check
         http.authorizeHttpRequests()
-            .requestMatchers("/**").authenticated()
             .requestMatchers("/actuator", "/actuator/**").permitAll()
-            .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll();
+            .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+            .requestMatchers("/**").authenticated();
         
         return http.build();
     }
