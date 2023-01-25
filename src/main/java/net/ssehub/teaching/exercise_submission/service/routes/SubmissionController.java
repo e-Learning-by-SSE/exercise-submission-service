@@ -75,8 +75,8 @@ public class SubmissionController {
      * Route for adding a new submission.
      * 
      * @param course The course to add the submission for.
-     * @param assignmentName The assignment to add the submission for.
-     * @param groupName The group to add the submission for.
+     * @param assignment The assignment to add the submission for.
+     * @param group The group to add the submission for.
      * @param files The files of the submission.
      * @param auth The authentication.
      * 
@@ -139,13 +139,13 @@ public class SubmissionController {
             @Parameter(
                 description = "Name of the assignment to submit to",
                 example = "Homework02")
-            String assignmentName,
+            String assignment,
             
             @PathVariable
             @Parameter(
                 description = "Name of the group (or username for single assignments) to submit to",
                 example = "JP024")
-            String groupName,
+            String group,
             
             @RequestBody
             @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The files of this submission")
@@ -156,7 +156,7 @@ public class SubmissionController {
             throws NoSuchTargetException, StorageException, UnauthorizedException {
         
         String username = auth.getName();
-        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
+        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
         
         if (!authManager.isSubmissionAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -191,8 +191,8 @@ public class SubmissionController {
      * Route for retrieving the list of submitted versions.
      * 
      * @param course The course where the submission is located.
-     * @param assignmentName The assignment where the submission is located.
-     * @param groupName The group where the submission is located.
+     * @param assignment The assignment where the submission is located.
+     * @param group The group where the submission is located.
      * @param auth The authentication.
      * 
      * @return The list of versions for that submission.
@@ -234,20 +234,20 @@ public class SubmissionController {
             @Parameter(
                 description = "Name of the assignment to get versions for",
                 example = "Homework02")
-            String assignmentName,
+            String assignment,
             
             @PathVariable
             @Parameter(
                 description = "Name of the group (or username for single assignments) to get versions for",
                 example = "JP024")
-            String groupName,
+            String group,
             
             Authentication auth)
             
             throws NoSuchTargetException, StorageException, UnauthorizedException {
         
         String username = auth.getName();
-        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
+        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -269,8 +269,8 @@ public class SubmissionController {
      * Route for retrieving a given version of a submission.
      * 
      * @param course The course where the submission is located.
-     * @param assignmentName The assignment where the submission is located.
-     * @param groupName The group where the submission is located.
+     * @param assignment The assignment where the submission is located.
+     * @param group The group where the submission is located.
      * @param timestamp The timestamp identifying the submission.
      * @param auth The authentication.
      * 
@@ -310,13 +310,13 @@ public class SubmissionController {
             @Parameter(
                 description = "Name of the assignment to retrieve from",
                 example = "Homework02")
-            String assignmentName,
+            String assignment,
             
             @PathVariable
             @Parameter(
                 description = "Name of the group (or username for single assignments) to retrieve from",
                 example = "JP024")
-            String groupName,
+            String group,
             
             @PathVariable
             @Parameter(
@@ -329,7 +329,7 @@ public class SubmissionController {
             throws NoSuchTargetException, StorageException, UnauthorizedException {
         
         String username = auth.getName();
-        SubmissionTarget target = new SubmissionTarget(course, assignmentName, groupName);
+        SubmissionTarget target = new SubmissionTarget(course, assignment, group);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
