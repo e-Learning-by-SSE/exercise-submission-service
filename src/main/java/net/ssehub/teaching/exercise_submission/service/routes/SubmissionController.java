@@ -5,6 +5,7 @@ import java.util.Base64;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,15 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import net.ssehub.teaching.exercise_submission.service.auth.AuthManager;
 import net.ssehub.teaching.exercise_submission.service.dto.FileDto;
 import net.ssehub.teaching.exercise_submission.service.dto.SubmissionResultDto;
@@ -33,7 +43,12 @@ import net.ssehub.teaching.exercise_submission.service.submission.Version;
  * @author Adam
  */
 @RestController
-@RequestMapping("/submission")
+@RequestMapping(
+    path = "/submission",
+    consumes = MediaType.APPLICATION_JSON_VALUE,
+    produces = MediaType.APPLICATION_JSON_VALUE)
+@Tag(name = "submission")
+@SecurityRequirement(name = "oauth2")
 public class SubmissionController {
     
     private SubmissionManager manager;
@@ -69,14 +84,74 @@ public class SubmissionController {
      * @throws StorageException If a storage exception occurs.
      * @throws UnauthorizedException If the user is not allowed to submit a new version to this target.
      */
+    @Operation(
+        description = "Adds a new submission for the given assignment and group",
+        responses = {
+            @ApiResponse(
+                responseCode = "201",
+                description = "Submission accepted",
+                content = {
+                    @Content(
+                        schema = @Schema(implementation = SubmissionResultDto.class),
+                        examples = {
+                            @ExampleObject(value = "{\"accepted\": true, \"messages\": []}")
+                        })
+                }),
+            @ApiResponse(
+                responseCode = "200",
+                description = "Submission rejected based on submission checks",
+                content = {
+                    @Content(
+                        schema = @Schema(implementation = SubmissionResultDto.class),
+                        examples = {
+                            @ExampleObject(value = "{\"accepted\": false, \"messages\": []}")
+                        })
+                }),
+            @ApiResponse(
+                responseCode = "400",
+                description = "Input data malformed or invalid",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "403",
+                description = "User is not authorized to add a new submission",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Assignment or group does not exist",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "500",
+                description = "An unexpected internal server error occurred",
+                content = {@Content})
+        }
+    )
     @PostMapping("/{course}/{assignment}/{group}")
     @PreAuthorize("permitAll()")
     public ResponseEntity<SubmissionResultDto> submit(
-            @PathVariable String course,
-            @PathVariable String assignment,
-            @PathVariable String group,
-            @RequestBody List<FileDto> files,
+            @PathVariable
+            @Parameter(
+                description = "ID of the course that contains the assignment",
+                example = "java-sose23")
+            String course,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the assignment to submit to",
+                example = "Homework02")
+            String assignment,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the group (or username for single assignments) to submit to",
+                example = "JP024")
+            String group,
+            
+            @RequestBody
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "The files of this submission")
+            List<FileDto> files,
+            
             Authentication auth)
+            
             throws StorageException, UnauthorizedException {
         
         String username = auth.getName();
@@ -124,13 +199,52 @@ public class SubmissionController {
      * @throws StorageException If a storage exception occurs.
      * @throws UnauthorizedException If the user is not allowed to replay this target.
      */
+    @Operation(
+        description = "Retrieves a list of all submitted versions for the given assignment and group",
+        responses = {
+            @ApiResponse(
+                responseCode = "200",
+                description = "List of versions in reverse-chronological order (i.e. latest version first) is returned",
+                content = {
+                    @Content(array = @ArraySchema(schema = @Schema(implementation = VersionDto.class)))
+                }),
+            @ApiResponse(
+                responseCode = "403",
+                description = "User is not authorized to get the version list",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "404",
+                description = "Assignment or group does not exist",
+                content = {@Content}),
+            @ApiResponse(
+                responseCode = "500",
+                description = "An unexpected internal server error occurred",
+                content = {@Content})
+        }
+    )
     @GetMapping("/{course}/{assignment}/{group}/versions")
     @PreAuthorize("permitAll()")
     public List<VersionDto> listVersions(
-            @PathVariable String course,
-            @PathVariable String assignment,
-            @PathVariable String group,
+            @PathVariable
+            @Parameter(
+                description = "ID of the course that contains the assignment",
+                example = "java-sose23")
+            String course,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the assignment to get versions for",
+                example = "Homework02")
+            String assignment,
+            
+            @PathVariable
+            @Parameter(
+                description = "Name of the group (or username for single assignments) to get versions for",
+                example = "JP024")
+            String group,
+            
             Authentication auth)
+            
             throws StorageException, UnauthorizedException {
         
         String username = auth.getName();

@@ -1,3 +1,25 @@
 spring.security.oauth2.resourceserver:
     jwt:
         issuer-uri: ${OAUTH2_ISSUER_URI}
+
+springdoc:
+    api-docs:
+        enabled: false
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: health
+
+---
+
+spring:
+    config:
+        activate:
+            on-profile: openapi
+
+springdoc:
+    api-docs:
+        enabled: true
+    writer-with-default-pretty-printer: true
