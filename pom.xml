@@ -15,14 +15,6 @@
 
 	<properties>
 		<java.version>17</java.version>
-
-		<!-- default values for docker image publishing -->
-		<docker.user>undefined</docker.user>
-		<docker.password>undefined</docker.password>
-		<docker.registry>ghcr.io</docker.registry>
-		<docker.group>e-learning-by-sse</docker.group>
-
-		<docker.baseTag>${docker.registry}/${docker.group}/${project.artifactId}</docker.baseTag>
 	</properties>
 
 	<dependencies>
@@ -62,18 +54,6 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<image>
-						<name>${docker.baseTag}:${project.version}</name>
-					</image>
-					<docker>
-						<publishRegistry>
-							<username>${docker.user}</username>
-							<password>${docker.password}</password>
-							<url>https://${docker.registry}</url>
-						</publishRegistry>
-					</docker>
-				</configuration>
 				<!-- start during integration test phase so that openapi.json can be generated -->
 				<executions>
 					<execution>
