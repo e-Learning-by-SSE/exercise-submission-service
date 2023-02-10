@@ -42,6 +42,7 @@ public class SubmissionControllerIT extends StorageInitializer {
     
     @Nested
     class Submit {
+        // TODO: the tests here fail because StuMgmtView is not working
         
         @Test
         public void successful() {
