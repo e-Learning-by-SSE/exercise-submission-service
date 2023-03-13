@@ -28,10 +28,12 @@ public class HttpSecurityConfig {
     // checkstyle: stop exception type check
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     // checkstyle: resume exception type check
-        http.authorizeHttpRequests()
-            .requestMatchers("/actuator", "/actuator/**").permitAll()
-            .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
-            .requestMatchers("/**").authenticated();
+        http
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/actuator", "/actuator/**").permitAll()
+                .requestMatchers("/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-ui/**").permitAll()
+                .requestMatchers("/**").authenticated())
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt());
         
         return http.build();
     }
