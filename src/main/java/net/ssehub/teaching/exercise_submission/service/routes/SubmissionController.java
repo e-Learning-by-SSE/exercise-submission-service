@@ -264,6 +264,8 @@ public class SubmissionController {
         
         List<Version> version = storage.getVersions(target);
         
+        LOGGER.info("Returning list of " + version.size() + " versions");
+        
         return version.stream()
                 .map(v -> new VersionDto(v.author(), v.creationTime().getEpochSecond()))
                 .toList();
@@ -335,7 +337,7 @@ public class SubmissionController {
         String username = auth.getName();
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
 
-        LOGGER.info("Replaying " + target + " for user " + username);
+        LOGGER.info("Replaying version " + timestamp + " of " + target + " for user " + username);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -359,6 +361,9 @@ public class SubmissionController {
                         filepath.toString().replace('\\', '/'),
                         submission.getFileContent(filepath)));
             }
+            
+            LOGGER.info("Returning previous submission content with " + files.size() + " files");
+            
             return files;
             
         } else {
