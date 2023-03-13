@@ -5,6 +5,8 @@ import java.util.Base64;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -51,6 +53,8 @@ import net.ssehub.teaching.exercise_submission.service.submission.Version;
 @Tag(name = "submission")
 @SecurityRequirement(name = "oidc")
 public class SubmissionController {
+    
+    private static final Log LOGGER = LogFactory.getLog(SubmissionController.class);
     
     private SubmissionManager manager;
     
@@ -158,6 +162,8 @@ public class SubmissionController {
         String username = auth.getName();
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
         
+        LOGGER.info("Submission by " + username + " to " + target);
+        
         if (!authManager.isSubmissionAllowed(target, username)) {
             throw new UnauthorizedException();
         }
@@ -181,6 +187,7 @@ public class SubmissionController {
             result = new ResponseEntity<>(resultDto, status);
             
         } catch (IllegalArgumentException e) {
+            LOGGER.info("Found relative file path in submission", e);
             result = new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
         
@@ -248,6 +255,8 @@ public class SubmissionController {
         
         String username = auth.getName();
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
+        
+        LOGGER.info("Listing versions of " + target + " for user " + username);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -325,6 +334,8 @@ public class SubmissionController {
         
         String username = auth.getName();
         SubmissionTarget target = new SubmissionTarget(course, assignment, group);
+
+        LOGGER.info("Replaying " + target + " for user " + username);
         
         if (!authManager.isReplayAllowed(target, username)) {
             throw new UnauthorizedException();
@@ -351,6 +362,7 @@ public class SubmissionController {
             return files;
             
         } else {
+            LOGGER.info("No version " + timestamp + " found for " + target);
             throw new NoSuchTargetException(target, timestamp);
         }
     }
