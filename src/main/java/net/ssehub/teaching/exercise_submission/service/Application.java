@@ -6,8 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
 import io.swagger.v3.oas.annotations.info.Info;
-import io.swagger.v3.oas.annotations.security.OAuthFlow;
-import io.swagger.v3.oas.annotations.security.OAuthFlows;
 import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -26,9 +24,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
         @Tag(name = "submission", description = "Sending and retrieving submission"),
     }
 )
-@SecurityScheme(name = "oauth2", type = SecuritySchemeType.OAUTH2, flows = @OAuthFlows(
-        implicit = @OAuthFlow(
-                authorizationUrl = "http://localhost:8090/authorize", tokenUrl = "http://localhost:8090/token")))
+@SecurityScheme(
+    name = "oidc",
+    type = SecuritySchemeType.OPENIDCONNECT,
+    openIdConnectUrl = "http://localhost:8090/.well-known/openid-configuration")
 @SpringBootApplication
 public class Application {
 

@@ -49,7 +49,7 @@ import net.ssehub.teaching.exercise_submission.service.submission.Version;
     consumes = MediaType.APPLICATION_JSON_VALUE,
     produces = MediaType.APPLICATION_JSON_VALUE)
 @Tag(name = "submission")
-@SecurityRequirement(name = "oauth2")
+@SecurityRequirement(name = "oidc")
 public class SubmissionController {
     
     private SubmissionManager manager;
