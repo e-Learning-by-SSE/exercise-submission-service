@@ -1,5 +1,7 @@
 package net.ssehub.teaching.exercise_submission.service.auth;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.stereotype.Component;
 
 import net.ssehub.teaching.exercise_submission.service.stu_mgmt.Assignment;
@@ -17,6 +19,8 @@ import net.ssehub.teaching.exercise_submission.service.submission.SubmissionTarg
  */
 @Component
 public class AuthManager {
+    
+    private static final Log LOGGER = LogFactory.getLog(AuthManager.class);
     
     private StuMgmtView stuMgmtView;
     
@@ -128,16 +132,32 @@ public class AuthManager {
             Assignment assignment = course.assignmentsByName().get(target.assignmentName());
             
             boolean allowed;
-            if (participant != null && assignment != null) {
+            if (participant == null) {
+                LOGGER.info("Participant " + username + " does not exist in course");
+                allowed = false;
+            } else  if (assignment == null) {
+                LOGGER.info("Assignment " + target.assignmentName() + " does not exist");
+                allowed = false;
                 
-                allowed = roleCanSubmitToAssignmentState(assignment.state(), participant.role())
-                        && participantCanAccessGroup(participant, assignment, target.groupName());
+            } else if (!participantCanAccessGroup(participant, assignment, target.groupName())) {
+                LOGGER.info("Participant " + username + " is not allowed to access group " + target.groupName());
+                allowed = false;
+                
+            } else if (!roleCanSubmitToAssignmentState(assignment.state(), participant.role())) {
+                LOGGER.info("Assignment state " + assignment.state() + " does not allow submission by role "
+                        + participant.role());
+                allowed = false;
                 
             } else {
-                allowed = false;
+                allowed = true;
             }
+            
             return allowed;
-        }).orElse(false);
+            
+        }).orElseGet(() -> {
+            LOGGER.info("Course " + target.course() + " does not exist");
+            return false;
+        });
     }
     
     /**
@@ -154,16 +174,32 @@ public class AuthManager {
             Assignment assignment = course.assignmentsByName().get(target.assignmentName());
             
             boolean allowed;
-            if (participant != null && assignment != null) {
+            if (participant == null) {
+                LOGGER.info("Participant " + username + " does not exist in course");
+                allowed = false;
+            } else  if (assignment == null) {
+                LOGGER.info("Assignment " + target.assignmentName() + " does not exist");
+                allowed = false;
                 
-                allowed = roleCanReplayAssignmentState(assignment.state(), participant.role())
-                        && participantCanAccessGroup(participant, assignment, target.groupName());
+            } else if (!participantCanAccessGroup(participant, assignment, target.groupName())) {
+                LOGGER.info("Participant " + username + " is not allowed to access group " + target.groupName());
+                allowed = false;
+                
+            } else if (!roleCanReplayAssignmentState(assignment.state(), participant.role())) {
+                LOGGER.info("Assignment state " + assignment.state() + " does not allow replay by role "
+                        + participant.role());
+                allowed = false;
                 
             } else {
-                allowed = false;
+                allowed = true;
             }
+            
             return allowed;
-        }).orElse(false);
+            
+        }).orElseGet(() -> {
+            LOGGER.info("Course " + target.course() + " does not exist");
+            return false;
+        });
     }
     
 }
