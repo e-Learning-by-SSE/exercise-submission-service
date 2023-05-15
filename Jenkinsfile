@@ -2,7 +2,7 @@ pipeline {
     agent {
         label 'maven && docker && jdk17'
     }
-
+    
     environment {
         DOCKER_TARGET = 'ghcr.io/e-learning-by-sse/exercise-submission-service:latest'
     }
@@ -20,15 +20,10 @@ pipeline {
 
         stage('Publish Docker') {
             steps {
-                script {
-                    version = sh(
-                            returnStdout: true,
-                            script: 'mvn -q -Dexec.executable=echo -Dexec.args=\'${project.version}\' --non-recursive exec:exec')
-                        .trim()
-                    image = docker.image("${env.DOCKER_TARGET}")
-                    docker.withRegistry('https://ghcr.io', 'github-ssejenkins') {
-                        image.push("${version}") // pom project version
-                        image.push() // tagged version from name
+                ssedocker {
+                    publish {
+                        imageName "${env.DOCKER_TARGET}"
+                        additionalTag "${maven.getProjectVersion()}"
                     }
                 }
             }
