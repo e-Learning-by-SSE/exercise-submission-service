@@ -23,7 +23,7 @@ pipeline {
                 ssedocker {
                     publish {
                         imageName "${env.DOCKER_TARGET}"
-                        additionalTag "${maven.getProjectVersion()}"
+                        tag "${maven.getProjectVersion()}"
                     }
                 }
             }
